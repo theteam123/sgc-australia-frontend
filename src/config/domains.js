@@ -147,8 +147,8 @@ export const DOMAINS = {
   },
   'localhost': {
     key: 'LocalDev', 
-    apiUrl: 'https://desk.theteamapp.theteam.net.au',
-    fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
+    apiUrl: 'https://ops.sgcloud.com.au',
+    fallbackUrl: 'https://ops.sgcloud.com.au',
     logo: 'https://i.ibb.co/bMvJc3rm/SGCAustralia-Logo.png',
     ico: '/ico-sgc.png',
     theme: {
@@ -157,9 +157,9 @@ export const DOMAINS = {
       accent: '#22c55e' // green-500
     },
     oauthConfig: {
-      clientId: import.meta.env.VITE_OAUTH_CLIENT_ID || 'localhost_client',
-      clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET || 'localhost_secret',
-      redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI || 'http://localhost:3002/oauth-callback'
+      clientId: import.meta.env.VITE_OAUTH_CLIENT_ID || 'gr91bu9hh3',
+      clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET || '6cdbbfe3ad',
+      redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI || 'https://localhost:3000/oauth-callback'
     },
     documentItems: []
   }
