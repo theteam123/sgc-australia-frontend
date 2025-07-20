@@ -5,167 +5,107 @@
       <div class="breadcrumb">
         <router-link to="/projects" class="breadcrumb-link">Projects</router-link>
         <span class="breadcrumb-separator">›</span>
-        <span>{{ project.project_name }}</span>
+        <span>#{{ project.project_code }} {{ project.project_name }}</span>
       </div>
       
       <div class="project-title-section">
-        <div>
-          <h1 class="project-title">{{ project.project_name }}</h1>
-          <p class="project-number">Project #{{ project.project_code }}</p>
+        <div class="status-progress-section">
+          <select 
+            v-if="isEditing"
+            v-model="project.status" 
+            class="status-select"
+            data-fieldtype="Select" 
+            data-fieldname="status" 
+            data-doctype="Project"
+          >
+            <option value="Opportunity">Opportunity</option>
+            <option value="Estimate">Estimate</option>
+            <option value="Project">Project</option>
+            <option value="Archived">Archived</option>
+          </select>
+          <span v-else :class="['status-badge', getStatusClass(project.status)]">{{ project.status }}</span>
+          <div class="progress-section">
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: getCompletionPercentage() + '%' }"></div>
+            </div>
+            <div class="progress-text">{{ getCompletionPercentage() }}% Complete</div>
+          </div>
         </div>
-        <select 
-          v-if="isEditing"
-          v-model="project.status" 
-          class="status-select"
-          data-fieldtype="Select" 
-          data-fieldname="status" 
-          data-doctype="Project"
-        >
-          <option value="Opportunity">Opportunity</option>
-          <option value="Estimate">Estimate</option>
-          <option value="Project">Project</option>
-          <option value="Archived">Archived</option>
-        </select>
-        <span v-else :class="['status-badge', getStatusClass(project.status)]">{{ project.status }}</span>
       </div>
     </div>
 
     <!-- Project Overview -->
     <div class="project-overview">
-      <div class="project-info">
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Client</div>
-            <div class="info-value large">{{ project.organisation }}</div>
-          </div>
-        </div>
-
-        <div class="info-item scope-of-work">
-          <div class="info-label">Scope of Work</div>
-          <div class="info-value">
-            <textarea 
-              v-if="isEditing"
-              v-model="project.custom_scope_of_work" 
-              class="form-control scope-textarea"
-              data-fieldtype="Text" 
-              data-fieldname="custom_scope_of_work" 
-              data-doctype="Project"
-              placeholder="Enter scope of work details..."
-              spellcheck="false"
-              aria-label="Scope of Work"
-            ></textarea>
-            <div v-else class="scope-display">
-              {{ project.custom_scope_of_work || 'No scope of work defined.' }}
-            </div>
-          </div>
-        </div>
-
-        <div class="progress-section">
-          <div class="info-label">Project Progress</div>
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: getCompletionPercentage() + '%' }"></div>
-          </div>
-          <div class="progress-text">{{ getCompletionPercentage() }}% Complete</div>
-        </div>
-
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Start Date</div>
-            <div class="info-value">{{ formatDate(project.project_start_date) }}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">End Date</div>
-            <div class="info-value">{{ formatDate(project.project_end_date) }}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="project-stats">
-        <div class="stat-card">
-          <div class="stat-value">{{ formatCurrency(project.estimated_revenue) }}</div>
-          <div class="stat-label">Estimated Revenue</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value spent">{{ formatCurrency(project.estimated_labour_cost) }}</div>
-          <div class="stat-label">Estimated Labour Cost</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value time">{{ project.estimated_hours }}h</div>
-          <div class="stat-label">Estimated Hours</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value time">{{ project.labour_hours }}h</div>
-          <div class="stat-label">Actual Hours</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Widgets Section -->
-    <div class="widgets-section">
-      <div class="widgets-grid">
+      <div class="project-widgets">
         <div class="widget-column">
-          <h4 class="widget-column-title">Sales</h4>
-          <div class="widget-item">
-            <span class="widget-label">Sales Order</span>
-            <div class="widget-stats">
-              <span class="widget-count">{{ project.sales_order_count || 0 }}</span>
-              <span class="widget-value">{{ formatCurrency(project.sales_order_value || 0) }}</span>
+          <div class="widget-row">
+            <div class="widget-item">
+              <span class="widget-label">Sales Order</span>
+              <div class="widget-stats">
+                <span class="widget-count">{{ project.sales_order_count || 0 }}</span>
+                <span class="widget-value">{{ formatCurrency(project.sales_order_value || 0) }}</span>
+              </div>
+              <button class="widget-add-btn" @click="addWidget('sales-order')">+</button>
             </div>
-            <button class="widget-add-btn" @click="addWidget('sales-order')">+</button>
-          </div>
-          <div class="widget-item">
-            <span class="widget-label">Sales Invoice</span>
-            <div class="widget-stats">
-              <span class="widget-count">{{ project.sales_invoice_count || 0 }}</span>
-              <span class="widget-value">{{ formatCurrency(project.sales_invoice_value || 0) }}</span>
+            <div class="widget-item">
+              <span class="widget-label">Sales Invoice</span>
+              <div class="widget-stats">
+                <span class="widget-count">{{ project.sales_invoice_count || 0 }}</span>
+                <span class="widget-value">{{ formatCurrency(project.sales_invoice_value || 0) }}</span>
+              </div>
+              <button class="widget-add-btn" @click="addWidget('sales-invoice')">+</button>
             </div>
-            <button class="widget-add-btn" @click="addWidget('sales-invoice')">+</button>
           </div>
         </div>
         
         <div class="widget-column">
-          <h4 class="widget-column-title">Purchases</h4>
-          <div class="widget-item">
-            <span class="widget-label">Purchase Order</span>
-            <div class="widget-stats">
-              <span class="widget-count">{{ project.purchase_order_count || 0 }}</span>
-              <span class="widget-value">{{ formatCurrency(project.purchase_order_value || 0) }}</span>
+          <div class="widget-row">
+            <div class="widget-item">
+              <span class="widget-label">Purchase Order</span>
+              <div class="widget-stats">
+                <span class="widget-count">{{ project.purchase_order_count || 0 }}</span>
+                <span class="widget-value">{{ formatCurrency(project.purchase_order_value || 0) }}</span>
+              </div>
+              <button class="widget-add-btn" @click="addWidget('purchase-order')">+</button>
             </div>
-            <button class="widget-add-btn" @click="addWidget('purchase-order')">+</button>
-          </div>
-          <div class="widget-item">
-            <span class="widget-label">Purchase Invoice</span>
-            <div class="widget-stats">
-              <span class="widget-count">{{ project.purchase_invoice_count || 0 }}</span>
-              <span class="widget-value">{{ formatCurrency(project.purchase_invoice_value || 0) }}</span>
+            <div class="widget-item">
+              <span class="widget-label">Purchase Invoice</span>
+              <div class="widget-stats">
+                <span class="widget-count">{{ project.purchase_invoice_count || 0 }}</span>
+                <span class="widget-value">{{ formatCurrency(project.purchase_invoice_value || 0) }}</span>
+              </div>
+              <button class="widget-add-btn" @click="addWidget('purchase-invoice')">+</button>
             </div>
-            <button class="widget-add-btn" @click="addWidget('purchase-invoice')">+</button>
           </div>
         </div>
         
         <div class="widget-column">
-          <h4 class="widget-column-title">Project</h4>
-          <div class="widget-item">
-            <span class="widget-label">Activity</span>
-            <div class="widget-stats">
-              <span class="widget-count">{{ activities.length }}</span>
+          <div class="widget-row">
+            <div class="widget-item">
+              <span class="widget-label">Activity</span>
+              <div class="widget-stats">
+                <span class="widget-count">{{ activities.length }}</span>
+              </div>
+              <button class="widget-add-btn" @click="addWidget('activity')">+</button>
             </div>
-            <button class="widget-add-btn" @click="addWidget('activity')">+</button>
+            <div class="widget-item">
+              <span class="widget-label">Timesheet</span>
+              <div class="widget-stats">
+                <span class="widget-count">{{ project.timesheet_count || 9 }}</span>
+                <span class="widget-value">{{ project.labour_hours }}h</span>
+              </div>
+              <button class="widget-add-btn" @click="addWidget('timesheet')">+</button>
+            </div>
           </div>
-          <div class="widget-item">
-            <span class="widget-label">Timesheet</span>
-            <div class="widget-stats">
-              <span class="widget-count">{{ project.timesheet_count || 9 }}</span>
-              <span class="widget-value">{{ project.labour_hours }}h</span>
+          <div class="widget-row">
+            <div class="widget-item">
+              <span class="widget-label">Staffing Plan</span>
+              <div class="widget-stats">
+                <span class="widget-count">{{ project.staffing_plan_count || 1 }}</span>
+              </div>
+              <button class="widget-add-btn" @click="addWidget('staffing-plan')">+</button>
             </div>
-            <button class="widget-add-btn" @click="addWidget('timesheet')">+</button>
-          </div>
-          <div class="widget-item">
-            <span class="widget-label">Staffing Plan</span>
-            <div class="widget-stats">
-              <span class="widget-count">{{ project.staffing_plan_count || 1 }}</span>
-            </div>
-            <button class="widget-add-btn" @click="addWidget('staffing-plan')">+</button>
+            <div class="widget-item widget-placeholder"></div>
           </div>
         </div>
       </div>
@@ -200,70 +140,6 @@
     <div class="tab-content">
       <!-- Project Details Tab (Active by default) -->
       <div v-show="activeTab === 'project-details'" class="tab-pane">
-        <!-- Project Detail Overview -->
-        <div class="project-detail-overview">
-          <div class="project-detail-info">
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Client</div>
-                <div class="info-value large">{{ project.organisation }}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Priority</div>
-                <div class="info-value large">{{ project.priority || 'Medium' }}</div>
-              </div>
-            </div>
-
-            <div class="info-item">
-              <div class="info-label">Work Type</div>
-              <div class="info-value">{{ project.work_type }}</div>
-            </div>
-
-            <div class="info-item">
-              <div class="info-label">Description</div>
-              <div class="info-value">{{ project.description || 'No description available.' }}</div>
-            </div>
-
-            <div class="progress-section">
-              <div class="info-label">Project Progress</div>
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: getCompletionPercentage() + '%' }"></div>
-              </div>
-              <div class="progress-text">{{ getCompletionPercentage() }}% Complete</div>
-            </div>
-
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Start Date</div>
-                <div class="info-value">{{ formatDate(project.project_start_date) }}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">End Date</div>
-                <div class="info-value">{{ formatDate(project.project_end_date) }}</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="project-detail-stats">
-            <div class="stat-card">
-              <div class="stat-value">{{ formatCurrency(project.estimated_revenue) }}</div>
-              <div class="stat-label">Estimated Revenue</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value spent">{{ formatCurrency(project.estimated_labour_cost) }}</div>
-              <div class="stat-label">Estimated Labour Cost</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value time">{{ project.estimated_hours }}h</div>
-              <div class="stat-label">Estimated Hours</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value time">{{ project.labour_hours }}h</div>
-              <div class="stat-label">Actual Hours</div>
-            </div>
-          </div>
-        </div>
-
         <!-- Project Details Form -->
         <div class="project-details-section">
           <div class="section-header">
@@ -320,20 +196,71 @@
 
           <div class="form-grid">
             <div class="form-field">
-              <label class="form-label">Site</label>
-              <input 
+              <label class="form-label">Client</label>
+              <select 
                 v-if="isEditing" 
-                v-model="project.site" 
-                type="text" 
+                v-model="project.organisation_id" 
                 class="form-input"
               >
+                <option value="">Select Client</option>
+                <option 
+                  v-for="option in organisationOptions" 
+                  :key="option.value" 
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
               <input 
                 v-else 
                 type="text" 
                 class="form-input" 
-                :value="project.site" 
+                :value="project.organisation" 
                 readonly
               >
+            </div>
+            <div class="form-field">
+              <label class="form-label">Site</label>
+              <div v-if="isEditing" class="control-input">
+                <input 
+                  v-model="project.site" 
+                  type="text" 
+                  autocomplete="off" 
+                  class="input-with-feedback form-control" 
+                  maxlength="140" 
+                  data-fieldtype="Data" 
+                  data-fieldname="site" 
+                  placeholder="" 
+                  data-doctype="Project"
+                >
+              </div>
+              <input 
+                v-else 
+                type="text" 
+                class="form-input" 
+                :value="project.site || ''" 
+                readonly
+              >
+            </div>
+          </div>
+
+          <div class="form-grid single-col">
+            <div class="form-field">
+              <label class="form-label">Scope of Works</label>
+              <textarea 
+                v-if="isEditing"
+                v-model="project.custom_scope_of_work" 
+                class="form-input scope-textarea"
+                data-fieldtype="Text" 
+                data-fieldname="custom_scope_of_work" 
+                data-doctype="Project"
+                placeholder="Enter scope of work details..."
+                spellcheck="false"
+                aria-label="Scope of Works"
+              ></textarea>
+              <div v-else class="form-input scope-display">
+                {{ project.custom_scope_of_work || 'No scope of work defined.' }}
+              </div>
             </div>
           </div>
 
@@ -520,13 +447,20 @@
               v-for="activity in activities" 
               :key="activity.id" 
               class="activity-item"
-              @click="selectActivity(activity)"
             >
-              <div class="activity-info">
+              <div class="activity-info" @click="selectActivity(activity)">
                 <div class="activity-name">{{ activity.name }}</div>
                 <div class="activity-id">{{ activity.id }}</div>
               </div>
-              <div class="activity-status">{{ activity.status }}</div>
+              <div class="activity-actions">
+                <div class="activity-status">{{ activity.status }}</div>
+                <button 
+                  @click.stop="editActivity(activity)" 
+                  class="edit-btn"
+                >
+                  Edit
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -551,14 +485,16 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProject, updateProject, getDropdownOptions, getProjectPermissions } from '../services/projects';
 import { 
+  getProjectDocuments, 
   createSalesOrder, 
-  createSalesInvoice, 
   createPurchaseOrder, 
   createPurchaseInvoice, 
+  createSalesInvoice,
   createActivity, 
   createTimesheet, 
   createStaffingPlan
 } from '../services/documents';
+import { getProjectActivities } from '../services/activities.js';
 import TimelineView from '../components/TimelineView.vue';
 
 // Types
@@ -595,17 +531,7 @@ const workTypeOptions = ref<any[]>([]);
 const industrySectorOptions = ref<any[]>([]);
 
 // Sample activities data
-const activities = ref<Activity[]>([
-  { id: '2324-T-ACT-398328', name: 'Travel', status: 'Completed' },
-  { id: '2324-T-ACT-398329', name: 'Perth Work Day Shift', status: 'Completed' },
-  { id: '2324-T-ACT-398330', name: 'Perth Work Night Shift', status: 'Completed' },
-  { id: '2324-T-ACT-398331', name: 'Site Work Day Shift', status: 'Completed' },
-  { id: '2324-T-ACT-398332', name: 'Site Work Night Shift', status: 'Completed' },
-  { id: '2324-T-ACT-398333', name: 'Inductions', status: 'Completed' },
-  { id: '2324-T-ACT-398334', name: 'Mobilisations', status: 'Completed' },
-  { id: '2324-T-ACT-398335', name: 'Project Management', status: 'Completed' },
-  { id: '2324-T-ACT-398336', name: 'Recruitment', status: 'Completed' }
-]);
+const activities = ref<Activity[]>([]);
 
 // Methods
 const loadProject = async () => {
@@ -633,11 +559,56 @@ const loadProject = async () => {
     if (projectPermissions.write) {
       loadDropdownOptions();
     }
+    
+    // Load project activities
+    await loadProjectActivities();
+    
   } catch (err: any) {
     error.value = err.message || 'Failed to load project';
     console.error('Error loading project:', err);
   } finally {
     loading.value = false;
+  }
+};
+
+const loadProjectActivities = async () => {
+  console.log('Loading project activities for project:', project.value);
+  console.log('Project name (ID):', project.value.name);
+  console.log('Project code:', project.value.project_code);
+  try {
+    if (project.value.name) {
+      // Try using project.name (ID) first, then fall back to project_code
+      console.log('Calling getProjectActivities with project name:', project.value.name);
+      let activityData = await getProjectActivities(project.value.name);
+      
+      // If no activities found with name, try with project_code
+      if (!activityData || activityData.length === 0) {
+        console.log('No activities found with project name, trying project_code:', project.value.project_code);
+        if (project.value.project_code) {
+          activityData = await getProjectActivities(project.value.project_code);
+        }
+      }
+      
+      console.log('Raw activity data received:', activityData);
+      
+      // Map activity data to our interface
+      activities.value = activityData.map((activity: any) => ({
+        id: activity.name,
+        name: activity.activity_name,
+        status: activity.status,
+        start_date: activity.start_date,
+        end_date: activity.end_date,
+        completion: activity.completion || 0,
+        estimated_hours: activity.estimated_hours || 0,
+        actual_hours: activity.burnt_hours || 0
+      }));
+      console.log('Mapped activities:', activities.value);
+    } else {
+      console.log('No project name or code available for loading activities');
+    }
+  } catch (err: any) {
+    console.error('Error loading project activities:', err);
+    // Keep the fallback data if API fails
   }
 };
 
@@ -775,6 +746,24 @@ const selectActivity = (activity: any) => {
   // Implement activity selection logic
 };
 
+const editActivity = (activity: any) => {
+  console.log('Edit activity:', activity);
+  
+  // Navigate to full page activity edit using the Frappe activity name (ID)
+  const projectId = route.params.id as string;
+  router.push({
+    name: 'ActivityEdit',
+    params: {
+      projectId: projectId,
+      activityId: activity.id // This is the Frappe activity name/ID
+    },
+    query: {
+      activityName: activity.name,
+      returnTo: 'project-detail'
+    }
+  });
+};
+
 const startEditing = () => {
   isEditing.value = true;
 };
@@ -798,6 +787,7 @@ const saveProject = async () => {
       project_name: project.value.project_name,
       site: project.value.site,
       status: project.value.status,
+      custom_scope_of_work: project.value.custom_scope_of_work,
       organisation: project.value.organisation_id,
       division: project.value.division_id,
       project_type: project.value.project_type_id,
@@ -869,8 +859,9 @@ onMounted(() => {
 /* Header */
 .project-header {
   background: var(--monday-white);
-  padding: var(--spacing-xl) 0;
-  border-bottom: 1px solid var(--monday-light);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--shadow-small);
   margin-bottom: var(--spacing-xl);
 }
 
@@ -899,7 +890,7 @@ onMounted(() => {
 .project-title-section {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: var(--spacing-lg);
 }
 
@@ -972,52 +963,25 @@ onMounted(() => {
 
 /* Project Overview */
 .project-overview {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--spacing-xl);
   margin-bottom: var(--spacing-xl);
 }
 
-.project-info {
-  background: var(--monday-white);
-  padding: var(--spacing-xl);
-  border-radius: var(--border-radius-large);
-  box-shadow: var(--shadow-small);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.project-widgets {
+  display: flex;
   gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
-}
-
-.info-item {
-  margin-bottom: var(--spacing-lg);
-}
-
-.info-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--monday-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--spacing-xs);
-}
-
-.info-value {
-  font-size: 14px;
-  color: var(--monday-dark);
-  font-weight: 500;
-}
-
-.info-value.large {
-  font-size: 16px;
-  font-weight: 600;
 }
 
 .progress-section {
-  margin: var(--spacing-xl) 0;
+  margin: var(--spacing-sm) 0;
+  flex: 1;
+}
+
+.status-progress-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 50%;
+  max-width: 600px;
 }
 
 .progress-bar {
@@ -1038,42 +1002,6 @@ onMounted(() => {
 .progress-text {
   font-size: 12px;
   color: var(--monday-medium);
-}
-
-.project-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-lg);
-}
-
-.stat-card {
-  background: var(--monday-white);
-  padding: var(--spacing-lg);
-  border-radius: var(--border-radius-medium);
-  text-align: center;
-  box-shadow: var(--shadow-small);
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: var(--spacing-xs);
-  color: var(--primary-green);
-}
-
-.stat-value.spent {
-  color: var(--monday-orange);
-}
-
-.stat-value.time {
-  color: var(--primary-green);
-}
-
-.stat-label {
-  font-size: 11px;
-  color: var(--monday-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* Widgets Section */
@@ -1097,6 +1025,15 @@ onMounted(() => {
   gap: var(--spacing-md);
 }
 
+.widget-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.widget-row .widget-item {
+  flex: 1;
+}
+
 .widget-column-title {
   font-size: 16px;
   font-weight: 600;
@@ -1105,13 +1042,19 @@ onMounted(() => {
 }
 
 .widget-item {
-  background: var(--monday-background);
+  background: var(--monday-white);
   border: 1px solid var(--monday-light);
   border-radius: var(--border-radius-medium);
   padding: var(--spacing-lg);
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.widget-placeholder {
+  background: transparent;
+  border: none;
+  visibility: hidden;
 }
 
 .widget-label {
@@ -1166,6 +1109,10 @@ onMounted(() => {
   margin-bottom: var(--spacing-xl);
   background: var(--monday-white);
   border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+  padding: 0 var(--spacing-xl);
+  box-shadow: var(--shadow-small);
+  min-height: 60px;
+  align-items: center;
 }
 
 .tab {
@@ -1175,15 +1122,25 @@ onMounted(() => {
   transition: all 0.2s ease;
   font-weight: 500;
   color: var(--monday-medium-dark);
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-size: 14px;
+  white-space: nowrap;
+  position: relative;
+  margin-bottom: -1px;
 }
 
 .tab.active {
   border-bottom-color: var(--primary-green);
   color: var(--primary-green);
+  font-weight: 600;
 }
 
 .tab:hover {
   color: var(--primary-green);
+  background: var(--monday-very-light);
 }
 
 /* Tab Content */
@@ -1256,7 +1213,6 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   transition: all 0.2s ease;
-  cursor: pointer;
 }
 
 .activity-item:hover {
@@ -1268,6 +1224,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  cursor: pointer;
+  flex: 1;
 }
 
 .activity-name {
@@ -1281,6 +1239,12 @@ onMounted(() => {
   color: var(--monday-medium);
 }
 
+.activity-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
 .activity-status {
   background: var(--accent-green-light);
   color: var(--accent-green);
@@ -1289,6 +1253,23 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.activity-edit-btn {
+  background: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.activity-edit-btn:hover {
+  background: var(--primary-green-hover);
+  transform: scale(1.05);
 }
 
 /* Project Details Form */
@@ -1390,6 +1371,10 @@ onMounted(() => {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.form-grid.single-col {
+  grid-template-columns: 1fr;
+}
+
 .form-field {
   display: flex;
   flex-direction: column;
@@ -1430,20 +1415,13 @@ onMounted(() => {
     padding: var(--spacing-lg);
   }
 
-  .project-overview {
-    grid-template-columns: 1fr;
+  .project-widgets {
+    flex-direction: column;
   }
-
-  .project-detail-overview {
-    grid-template-columns: 1fr;
-  }
-
-  .project-detail-stats {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .widgets-grid {
-    grid-template-columns: 1fr;
+  
+  .widget-column {
+    flex: 1;
+    min-width: 200px;
   }
 
   .form-grid.four-col,
@@ -1461,12 +1439,6 @@ onMounted(() => {
 @media (max-width: 1024px) {
   .form-grid.four-col {
     grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .project-detail-stats {
-    grid-template-columns: 1fr;
   }
 }
 

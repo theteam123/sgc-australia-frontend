@@ -14,6 +14,7 @@ import VoiceAssistant from './views/VoiceAssistant.vue'
 import ApiTester from './pages/ApiTester.vue'
 import Projects from './pages/Projects.vue'
 import ProjectDetail from './pages/ProjectDetail.vue'
+import ActivityEdit from './pages/ActivityEdit.vue'
 import { useAuthStore } from './stores/auth'
 import { useErrorStore } from './stores/error'
 
@@ -173,6 +174,15 @@ const routes = [
     path: '/projects/:id',
     name: 'project-detail',
     component: ProjectDetail,
+    meta: { 
+      requiresAuth: true
+      // Remove role restrictions for now to test the page
+    }
+  },
+  {
+    path: '/projects/:projectId/activity/:activityId/edit',
+    name: 'ActivityEdit',
+    component: ActivityEdit,
     meta: { 
       requiresAuth: true
       // Remove role restrictions for now to test the page
