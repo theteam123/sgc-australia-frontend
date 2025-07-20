@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getErpNextApiUrl } from '../utils/api';
-import { getOAuthConfig } from '../config/domains';
+import { getOAuthConfig, getApiUrl } from '../config/domains';
 
 // Get OAuth configuration
 const oauthConfig = getOAuthConfig();
@@ -10,8 +10,8 @@ const config = {
   clientId: oauthConfig.clientId,
   clientSecret: oauthConfig.clientSecret,
   redirectUri: oauthConfig.redirectUri,
-  authorizationEndpoint: `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.authorize`,
-  tokenEndpoint: `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.get_token`,
+  authorizationEndpoint: `${getApiUrl()}/api/method/frappe.integrations.oauth2.authorize`,
+  tokenEndpoint: `${getApiUrl()}/api/method/frappe.integrations.oauth2.get_token`,
   scope: 'all openid'
 };
 
