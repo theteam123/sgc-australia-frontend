@@ -2,33 +2,58 @@
   <div class="container">
     <!-- Header -->
     <div class="project-header">
-      <div class="breadcrumb">
-        <router-link to="/projects" class="breadcrumb-link">Projects</router-link>
-        <span class="breadcrumb-separator">›</span>
-        <span>#{{ project.project_code }} {{ project.project_name }}</span>
-      </div>
-      
-      <div class="project-title-section">
-        <div class="status-progress-section">
-          <select 
-            v-if="isEditing"
-            v-model="project.status" 
-            class="status-select"
-            data-fieldtype="Select" 
-            data-fieldname="status" 
-            data-doctype="Project"
-          >
-            <option value="Opportunity">Opportunity</option>
-            <option value="Estimate">Estimate</option>
-            <option value="Project">Project</option>
-            <option value="Archived">Archived</option>
-          </select>
-          <span v-else :class="['status-badge', getStatusClass(project.status)]">{{ project.status }}</span>
-          <div class="progress-section">
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: getCompletionPercentage() + '%' }"></div>
+      <div class="header-content">
+        <div class="header-left">
+          <div class="breadcrumb">
+            <router-link to="/projects" class="breadcrumb-link">Projects</router-link>
+            <span class="breadcrumb-separator">›</span>
+            <span>#{{ project.project_code }} {{ project.project_name }}</span>
+          </div>
+          
+          <div class="project-title-section">
+            <div class="status-progress-section">
+              <select 
+                v-if="isEditing"
+                v-model="project.status" 
+                class="status-select"
+                data-fieldtype="Select" 
+                data-fieldname="status" 
+                data-doctype="Project"
+              >
+                <option value="Opportunity">Opportunity</option>
+                <option value="Estimate">Estimate</option>
+                <option value="Project">Project</option>
+                <option value="Archived">Archived</option>
+              </select>
+              <span v-else :class="['status-badge', getStatusClass(project.status)]">{{ project.status }}</span>
+              <div class="progress-section">
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: getCompletionPercentage() + '%' }"></div>
+                </div>
+                <div class="progress-text">{{ getCompletionPercentage() }}% Complete</div>
+              </div>
             </div>
-            <div class="progress-text">{{ getCompletionPercentage() }}% Complete</div>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <div class="financial-stats">
+            <div class="stat-item">
+              <span class="stat-label">REVENUE</span>
+              <span class="stat-value">{{ formatCurrency(project.estimated_revenue) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">COST</span>
+              <span class="stat-value">{{ formatCurrency(project.estimated_labour_cost) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">MARGIN $</span>
+              <span class="stat-value">{{ formatCurrency(project.estimated_margin) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">MARGIN %</span>
+              <span class="stat-value" :class="getMarginColorClass(project.estimated_margin_percent)">{{ project.estimated_margin_percent }}%</span>
+            </div>
           </div>
         </div>
       </div>
@@ -122,7 +147,35 @@
         :class="{ active: activeTab === 'activity' }"
         @click="activeTab = 'activity'"
       >
-        Activity
+        Timeline
+      </div>
+      <div 
+        class="tab" 
+        :class="{ active: activeTab === 'files' }"
+        @click="activeTab = 'files'"
+      >
+        Files
+      </div>
+      <div 
+        class="tab" 
+        :class="{ active: activeTab === 'people' }"
+        @click="activeTab = 'people'"
+      >
+        People
+      </div>
+      <div 
+        class="tab" 
+        :class="{ active: activeTab === 'reports' }"
+        @click="activeTab = 'reports'"
+      >
+        Reports
+      </div>
+      <div 
+        class="tab" 
+        :class="{ active: activeTab === 'forms' }"
+        @click="activeTab = 'forms'"
+      >
+        Forms
       </div>
     </div>
 
@@ -164,12 +217,17 @@
           <div class="form-grid">
             <div class="form-field">
               <label class="form-label">Project Name <span class="required">*</span></label>
-              <input 
-                v-if="isEditing" 
-                v-model="project.project_name" 
-                type="text" 
-                class="form-input"
-              >
+              <div v-if="isEditing" class="control-input">
+                <input 
+                  v-model="project.project_name" 
+                  type="text" 
+                  class="input-with-feedback form-control"
+                  autocomplete="off"
+                  data-fieldtype="Data"
+                  data-fieldname="project_name"
+                  data-doctype="Project"
+                >
+              </div>
               <input 
                 v-else 
                 type="text" 
@@ -187,27 +245,32 @@
           <div class="form-grid">
             <div class="form-field">
               <label class="form-label">Client</label>
-              <select 
-                v-if="isEditing" 
-                v-model="project.organisation_id" 
-                class="form-input"
-              >
-                <option value="">Select Client</option>
-                <option 
-                  v-for="option in organisationOptions" 
-                  :key="option.value" 
-                  :value="option.value"
+              <div v-if="isEditing" class="control-input">
+                <select 
+                  v-model="project.organisation_id" 
+                  class="form-control"
+                  data-fieldtype="Link"
+                  data-fieldname="organisation"
+                  data-doctype="Project"
                 >
-                  {{ option.label }}
-                </option>
-              </select>
-              <input 
+                  <option value="">Select Client</option>
+                  <option 
+                    v-for="option in organisationOptions" 
+                    :key="option.value" 
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+              <div 
                 v-else 
-                type="text" 
-                class="form-input" 
-                :value="project.organisation" 
-                readonly
+                class="form-input clickable-field" 
+                @click="navigateToOrganisation"
+                :title="'Click to view ' + (project.organisation || 'organisation')"
               >
+                {{ project.organisation || '' }}
+              </div>
             </div>
             <div class="form-field">
               <label class="form-label">Site</label>
@@ -237,17 +300,18 @@
           <div class="form-grid single-col">
             <div class="form-field">
               <label class="form-label">Scope of Works</label>
-              <textarea 
-                v-if="isEditing"
-                v-model="project.custom_scope_of_work" 
-                class="form-input scope-textarea"
-                data-fieldtype="Text" 
-                data-fieldname="custom_scope_of_work" 
-                data-doctype="Project"
-                placeholder="Enter scope of work details..."
-                spellcheck="false"
-                aria-label="Scope of Works"
-              ></textarea>
+              <div v-if="isEditing" class="control-input">
+                <textarea 
+                  v-model="project.custom_scope_of_work" 
+                  class="form-control scope-textarea"
+                  data-fieldtype="Text" 
+                  data-fieldname="custom_scope_of_work" 
+                  data-doctype="Project"
+                  placeholder="Enter scope of work details..."
+                  spellcheck="false"
+                  aria-label="Scope of Works"
+                ></textarea>
+              </div>
               <div v-else class="form-input scope-display">
                 {{ project.custom_scope_of_work || 'No scope of work defined.' }}
               </div>
@@ -258,20 +322,24 @@
           <div class="form-grid four-col">
             <div class="form-field">
               <label class="form-label">Division</label>
-              <select 
-                v-if="isEditing" 
-                v-model="project.division_id" 
-                class="form-input"
-              >
-                <option value="">Select Division</option>
-                <option 
-                  v-for="option in divisionOptions" 
-                  :key="option.value" 
-                  :value="option.value"
+              <div v-if="isEditing" class="control-input">
+                <select 
+                  v-model="project.division_id" 
+                  class="form-control"
+                  data-fieldtype="Link"
+                  data-fieldname="division"
+                  data-doctype="Project"
                 >
-                  {{ option.label }}
-                </option>
-              </select>
+                  <option value="">Select Division</option>
+                  <option 
+                    v-for="option in divisionOptions" 
+                    :key="option.value" 
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
               <input 
                 v-else 
                 type="text" 
@@ -282,20 +350,24 @@
             </div>
             <div class="form-field">
               <label class="form-label">Project Type</label>
-              <select 
-                v-if="isEditing" 
-                v-model="project.project_type_id" 
-                class="form-input"
-              >
-                <option value="">Select Project Type</option>
-                <option 
-                  v-for="option in projectTypeOptions" 
-                  :key="option.value" 
-                  :value="option.value"
+              <div v-if="isEditing" class="control-input">
+                <select 
+                  v-model="project.project_type_id" 
+                  class="form-control"
+                  data-fieldtype="Link"
+                  data-fieldname="project_type"
+                  data-doctype="Project"
                 >
-                  {{ option.label }}
-                </option>
-              </select>
+                  <option value="">Select Project Type</option>
+                  <option 
+                    v-for="option in projectTypeOptions" 
+                    :key="option.value" 
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
               <input 
                 v-else 
                 type="text" 
@@ -306,20 +378,24 @@
             </div>
             <div class="form-field">
               <label class="form-label">Work Type</label>
-              <select 
-                v-if="isEditing" 
-                v-model="project.work_type_id" 
-                class="form-input"
-              >
-                <option value="">Select Work Type</option>
-                <option 
-                  v-for="option in workTypeOptions" 
-                  :key="option.value" 
-                  :value="option.value"
+              <div v-if="isEditing" class="control-input">
+                <select 
+                  v-model="project.work_type_id" 
+                  class="form-control"
+                  data-fieldtype="Link"
+                  data-fieldname="work_type"
+                  data-doctype="Project"
                 >
-                  {{ option.label }}
-                </option>
-              </select>
+                  <option value="">Select Work Type</option>
+                  <option 
+                    v-for="option in workTypeOptions" 
+                    :key="option.value" 
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
               <input 
                 v-else 
                 type="text" 
@@ -330,20 +406,24 @@
             </div>
             <div class="form-field">
               <label class="form-label">Industry Sector</label>
-              <select 
-                v-if="isEditing" 
-                v-model="project.industry_sector_id" 
-                class="form-input"
-              >
-                <option value="">Select Industry Sector</option>
-                <option 
-                  v-for="option in industrySectorOptions" 
-                  :key="option.value" 
-                  :value="option.value"
+              <div v-if="isEditing" class="control-input">
+                <select 
+                  v-model="project.industry_sector_id" 
+                  class="form-control"
+                  data-fieldtype="Link"
+                  data-fieldname="industry_sector"
+                  data-doctype="Project"
                 >
-                  {{ option.label }}
-                </option>
-              </select>
+                  <option value="">Select Industry Sector</option>
+                  <option 
+                    v-for="option in industrySectorOptions" 
+                    :key="option.value" 
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
               <input 
                 v-else 
                 type="text" 
@@ -358,12 +438,16 @@
           <div class="form-grid three-col">
             <div class="form-field">
               <label class="form-label">Project Award Date</label>
-              <input 
-                v-if="isEditing" 
-                v-model="project.project_award_date" 
-                type="date" 
-                class="form-input"
-              >
+              <div v-if="isEditing" class="control-input">
+                <input 
+                  v-model="project.project_award_date" 
+                  type="date" 
+                  class="form-control"
+                  data-fieldtype="Date"
+                  data-fieldname="project_award_date"
+                  data-doctype="Project"
+                >
+              </div>
               <input 
                 v-else 
                 type="date" 
@@ -374,12 +458,16 @@
             </div>
             <div class="form-field">
               <label class="form-label">Project Start Date</label>
-              <input 
-                v-if="isEditing" 
-                v-model="project.project_start_date" 
-                type="date" 
-                class="form-input"
-              >
+              <div v-if="isEditing" class="control-input">
+                <input 
+                  v-model="project.project_start_date" 
+                  type="date" 
+                  class="form-control"
+                  data-fieldtype="Date"
+                  data-fieldname="project_start_date"
+                  data-doctype="Project"
+                >
+              </div>
               <input 
                 v-else 
                 type="date" 
@@ -390,12 +478,16 @@
             </div>
             <div class="form-field">
               <label class="form-label">Project End Date</label>
-              <input 
-                v-if="isEditing" 
-                v-model="project.project_end_date" 
-                type="date" 
-                class="form-input"
-              >
+              <div v-if="isEditing" class="control-input">
+                <input 
+                  v-model="project.project_end_date" 
+                  type="date" 
+                  class="form-control"
+                  data-fieldtype="Date"
+                  data-fieldname="project_end_date"
+                  data-doctype="Project"
+                >
+              </div>
               <input 
                 v-else 
                 type="date" 
@@ -406,35 +498,104 @@
             </div>
           </div>
 
-          <h4 class="subsection-title">Financial Overview</h4>
-          <div class="form-grid four-col">
-            <div class="form-field">
-              <label class="form-label">Estimated Revenue</label>
-              <input type="text" class="form-input" :value="formatCurrency(project.estimated_revenue)" readonly>
-            </div>
-            <div class="form-field">
-              <label class="form-label">Estimated Labour Cost</label>
-              <input type="text" class="form-input" :value="formatCurrency(project.estimated_labour_cost)" readonly>
-            </div>
-            <div class="form-field">
-              <label class="form-label">Estimated Margin</label>
-              <input type="text" class="form-input" :value="formatCurrency(project.estimated_margin)" readonly>
-            </div>
-            <div class="form-field">
-              <label class="form-label">Margin Percentage</label>
-              <input type="text" class="form-input" :value="project.estimated_margin_percent + '%'" readonly>
-            </div>
-          </div>
         </div>
       </div>
 
       <!-- Activities Tab -->
       <div v-show="activeTab === 'activities'" class="tab-pane">
         <div class="activities-section">
-          <h3 class="section-title">Project Activities</h3>
+          <div class="activities-header">
+            <h3 class="section-title">Project Activities</h3>
+            
+            <!-- Filter Controls -->
+            <div class="filter-controls">
+              <div class="filter-buttons">
+                <button class="btn-primary" @click="createNewActivity">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                    <path d="M9 15h6"></path>
+                    <path d="M12 18v-6"></path>
+                  </svg>
+                  New Activity
+                </button>
+                <button class="btn-secondary" @click="showFilters = !showFilters">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                  {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search and Filter Section -->
+          <div class="search-filter-section">
+            <!-- Global Search -->
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.3-4.3"></path>
+                </svg>
+                <input 
+                  v-model="activitySearchQuery"
+                  type="text" 
+                  placeholder="Search activities..."
+                  class="search-input"
+                >
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div v-show="showFilters" class="filters-container">
+              <div class="filter-grid">
+                <div class="filter-field">
+                  <label class="filter-label">Status</label>
+                  <select v-model="selectedStatus" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="Working">Working</option>
+                    <option value="Pending Review">Pending Review</option>
+                    <option value="Overdue">Overdue</option>
+                    <option value="Template">Template</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div class="filter-field">
+                  <label class="filter-label">Activity Name</label>
+                  <input 
+                    v-model="activityNameFilter"
+                    type="text" 
+                    placeholder="Filter by name..."
+                    class="filter-input"
+                  >
+                </div>
+                <div class="filter-field">
+                  <label class="filter-label">Progress</label>
+                  <select v-model="progressFilter" class="filter-select">
+                    <option value="">All Progress</option>
+                    <option value="0">Not Started (0%)</option>
+                    <option value="1-25">1-25%</option>
+                    <option value="26-50">26-50%</option>
+                    <option value="51-75">51-75%</option>
+                    <option value="76-99">76-99%</option>
+                    <option value="100">Complete (100%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Results Count -->
+            <div class="results-count">
+              Showing {{ filteredActivities.length }} of {{ activities.length }} activities
+            </div>
+          </div>
+
           <div class="activity-list">
             <div 
-              v-for="activity in activities" 
+              v-for="activity in filteredActivities" 
               :key="activity.id" 
               class="activity-item"
             >
@@ -444,6 +605,29 @@
               </div>
               <div class="activity-actions">
                 <div class="activity-status">{{ activity.status }}</div>
+                
+                <!-- Activity Financial Stats -->
+                <div class="activity-financial-stats">
+                  <div class="activity-stat-item">
+                    <span class="activity-stat-label">REVENUE</span>
+                    <span class="activity-stat-value">{{ formatCurrency(activity.estimated_revenue || 0) }}</span>
+                  </div>
+                  <div class="activity-stat-item">
+                    <span class="activity-stat-label">COST</span>
+                    <span class="activity-stat-value">{{ formatCurrency(activity.estimated_cost || 0) }}</span>
+                  </div>
+                  <div class="activity-stat-item">
+                    <span class="activity-stat-label">MARGIN $</span>
+                    <span class="activity-stat-value">{{ formatCurrency((activity.estimated_revenue || 0) - (activity.estimated_cost || 0)) }}</span>
+                  </div>
+                  <div class="activity-stat-item">
+                    <span class="activity-stat-label">MARGIN %</span>
+                    <span class="activity-stat-value" :class="getMarginColorClass(getActivityMarginPercent(activity))">
+                      {{ getActivityMarginPercent(activity) }}%
+                    </span>
+                  </div>
+                </div>
+                
                 <button 
                   @click.stop="editActivity(activity)" 
                   class="edit-btn"
@@ -464,6 +648,79 @@
             :docname="project.name"
             v-if="project.name"
           />
+        </div>
+      </div>
+
+      <!-- Files Tab -->
+      <div v-show="activeTab === 'files'" class="tab-pane">
+        <div class="coming-soon-section">
+          <div class="coming-soon-content">
+            <div class="coming-soon-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+              </svg>
+            </div>
+            <h3 class="coming-soon-title">Files</h3>
+            <p class="coming-soon-description">File management and document storage will be available here soon.</p>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- People Tab -->
+      <div v-show="activeTab === 'people'" class="tab-pane">
+        <div class="coming-soon-section">
+          <div class="coming-soon-content">
+            <div class="coming-soon-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3 class="coming-soon-title">People</h3>
+            <p class="coming-soon-description">Team management and project assignments will be available here soon.</p>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports Tab -->
+      <div v-show="activeTab === 'reports'" class="tab-pane">
+        <div class="coming-soon-section">
+          <div class="coming-soon-content">
+            <div class="coming-soon-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <h3 class="coming-soon-title">Reports</h3>
+            <p class="coming-soon-description">Project analytics and reporting dashboard will be available here soon.</p>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Forms Tab -->
+      <div v-show="activeTab === 'forms'" class="tab-pane">
+        <div class="coming-soon-section">
+          <div class="coming-soon-content">
+            <div class="coming-soon-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10,9 9,9 8,9"></polyline>
+              </svg>
+            </div>
+            <h3 class="coming-soon-title">Forms</h3>
+            <p class="coming-soon-description">Custom forms and data collection tools will be available here soon.</p>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </div>
         </div>
       </div>
     </div>
@@ -497,6 +754,8 @@ interface Activity {
   completion?: number;
   estimated_hours?: number;
   actual_hours?: number;
+  estimated_revenue?: number;
+  estimated_cost?: number;
 }
 
 // Route and router
@@ -513,6 +772,13 @@ const isEditing = ref(false);
 const isSaving = ref(false);
 const permissions = ref<any>({});
 
+// Activity filters
+const showFilters = ref(false);
+const activitySearchQuery = ref('');
+const selectedStatus = ref('');
+const activityNameFilter = ref('');
+const progressFilter = ref('');
+
 // Dropdown options for linked fields
 const organisationOptions = ref<any[]>([]);
 const divisionOptions = ref<any[]>([]);
@@ -522,6 +788,58 @@ const industrySectorOptions = ref<any[]>([]);
 
 // Sample activities data
 const activities = ref<Activity[]>([]);
+
+// Computed filtered activities
+const filteredActivities = computed(() => {
+  let filtered = activities.value;
+
+  // Apply search filter
+  if (activitySearchQuery.value) {
+    const query = activitySearchQuery.value.toLowerCase();
+    filtered = filtered.filter(activity => 
+      activity.name.toLowerCase().includes(query) ||
+      activity.id.toLowerCase().includes(query)
+    );
+  }
+
+  // Apply status filter
+  if (selectedStatus.value) {
+    filtered = filtered.filter(activity => activity.status === selectedStatus.value);
+  }
+
+  // Apply activity name filter
+  if (activityNameFilter.value) {
+    const nameQuery = activityNameFilter.value.toLowerCase();
+    filtered = filtered.filter(activity => 
+      activity.name.toLowerCase().includes(nameQuery)
+    );
+  }
+
+  // Apply progress filter
+  if (progressFilter.value) {
+    filtered = filtered.filter(activity => {
+      const completion = activity.completion || 0;
+      switch (progressFilter.value) {
+        case '0':
+          return completion === 0;
+        case '1-25':
+          return completion >= 1 && completion <= 25;
+        case '26-50':
+          return completion >= 26 && completion <= 50;
+        case '51-75':
+          return completion >= 51 && completion <= 75;
+        case '76-99':
+          return completion >= 76 && completion <= 99;
+        case '100':
+          return completion === 100;
+        default:
+          return true;
+      }
+    });
+  }
+
+  return filtered;
+});
 
 // Methods
 const loadProject = async () => {
@@ -667,6 +985,41 @@ const getStatusClass = (status: string): string => {
   }
 };
 
+const getMarginColorClass = (marginPercent: number): string => {
+  if (marginPercent > 20) {
+    return 'margin-high';
+  } else if (marginPercent > 0) {
+    return 'margin-medium';
+  } else {
+    return 'margin-low';
+  }
+};
+
+const getActivityMarginPercent = (activity: any): number => {
+  const revenue = activity.estimated_revenue || 0;
+  const cost = activity.estimated_cost || 0;
+  if (revenue === 0) return 0;
+  return Math.round(((revenue - cost) / revenue) * 100);
+};
+
+const createNewActivity = () => {
+  router.push({
+    name: 'new-activity',
+    query: {
+      fromProject: project.value.name || route.params.id,
+      fromProjectName: project.value.project_name,
+      fromProjectCode: project.value.project_code
+    }
+  });
+};
+
+const clearFilters = () => {
+  activitySearchQuery.value = '';
+  selectedStatus.value = '';
+  activityNameFilter.value = '';
+  progressFilter.value = '';
+};
+
 const addWidget = async (widgetType: string) => {
   console.log('Add widget:', widgetType);
   
@@ -740,6 +1093,11 @@ const navigateToDocuments = (documentType: string) => {
     name: `project-${documentType}`,
     params: {
       projectId: projectId
+    },
+    query: {
+      fromProject: project.value.name || projectId,
+      fromProjectName: project.value.project_name,
+      fromProjectCode: project.value.project_code
     }
   });
 };
@@ -757,9 +1115,30 @@ const editActivity = (activity: any) => {
     },
     query: {
       activityName: activity.name,
-      returnTo: 'project-detail'
+      returnTo: 'project-detail',
+      fromProject: project.value.name || projectId,
+      fromProjectName: project.value.project_name,
+      fromProjectCode: project.value.project_code
     }
   });
+};
+
+const navigateToOrganisation = () => {
+  if (project.value.organisation_id) {
+    router.push({
+      name: 'organisation-detail',
+      params: {
+        id: project.value.organisation_id
+      },
+      query: {
+        fromProject: project.value.name || route.params.id,
+        fromProjectName: project.value.project_name,
+        fromProjectCode: project.value.project_code
+      }
+    });
+  } else {
+    console.log('No organisation ID available');
+  }
 };
 
 const startEditing = () => {
@@ -863,13 +1242,6 @@ onMounted(() => {
   margin-bottom: var(--spacing-xl);
 }
 
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-  font-size: 14px;
-}
 
 .breadcrumb-link {
   color: var(--primary-green);
@@ -885,11 +1257,115 @@ onMounted(() => {
   color: var(--monday-medium);
 }
 
+.header-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  align-items: start;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.header-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
 .project-title-section {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin-bottom: var(--spacing-lg);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Financial Stats Widgets */
+.financial-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  max-width: 400px;
+  width: 100%;
+}
+
+.stat-item {
+  background: var(--monday-white);
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+  border-color: var(--primary-green-light);
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--monday-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.2;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-green);
+  line-height: 1;
+}
+
+/* Margin percentage color classes */
+.stat-value.margin-high {
+  color: #2e7d32; /* Green for > 20% */
+}
+
+.stat-value.margin-medium {
+  color: #f57c00; /* Orange for 0-20% */
+}
+
+.stat-value.margin-low {
+  color: #d32f2f; /* Red for <= 0% */
+}
+
+/* Clickable field styling */
+.clickable-field {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.clickable-field:hover {
+  background: var(--primary-green-light);
+  color: var(--primary-green);
+  border-color: var(--primary-green);
+}
+
+.clickable-field:hover::after {
+  content: '→';
+  position: absolute;
+  right: var(--spacing-sm);
+  color: var(--primary-green);
+  font-weight: bold;
 }
 
 .project-title {
@@ -972,14 +1448,14 @@ onMounted(() => {
 .progress-section {
   margin: var(--spacing-sm) 0;
   flex: 1;
+  max-width: 75%; /* 3/4 of the left column */
 }
 
 .status-progress-section {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  width: 50%;
-  max-width: 600px;
+  width: 100%;
 }
 
 .progress-bar {
@@ -1133,6 +1609,8 @@ onMounted(() => {
   box-shadow: var(--shadow-small);
   min-height: 60px;
   align-items: center;
+  overflow-x: auto;
+  gap: var(--spacing-xs);
 }
 
 .tab {
@@ -1205,10 +1683,202 @@ onMounted(() => {
 /* Activity Section */
 .activity-section {
   background: var(--monday-white);
+  padding: 0;
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--shadow-small);
+  margin-bottom: var(--spacing-xl);
+  width: 100%;
+}
+
+/* Coming Soon Sections */
+.coming-soon-section {
+  background: var(--monday-white);
   padding: var(--spacing-xl);
   border-radius: var(--border-radius-large);
   box-shadow: var(--shadow-small);
   margin-bottom: var(--spacing-xl);
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coming-soon-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.coming-soon-icon {
+  color: var(--monday-medium);
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.7;
+}
+
+.coming-soon-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--monday-dark);
+  margin-bottom: var(--spacing-md);
+}
+
+.coming-soon-description {
+  font-size: 16px;
+  color: var(--monday-medium-dark);
+  line-height: 1.5;
+  margin-bottom: var(--spacing-lg);
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  background: var(--primary-green-light);
+  color: var(--primary-green);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-xl);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Activities Filter Styles */
+.activities-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.filter-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.filter-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.btn-primary, .btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-medium);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.btn-primary {
+  background: var(--primary-green);
+  color: white;
+  border-color: var(--primary-green);
+}
+
+.btn-primary:hover {
+  background: var(--primary-green-hover);
+  border-color: var(--primary-green-hover);
+}
+
+.btn-secondary {
+  background: var(--monday-white);
+  color: var(--monday-medium-dark);
+  border-color: var(--monday-light);
+}
+
+.btn-secondary:hover {
+  background: var(--monday-very-light);
+}
+
+.search-filter-section {
+  background: var(--monday-white);
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.search-container {
+  margin-bottom: var(--spacing-md);
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--monday-medium);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 40px;
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px var(--primary-green-light);
+}
+
+.filters-container {
+  border-top: 1px solid var(--monday-very-light);
+  padding-top: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--monday-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.filter-input, .filter-select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.filter-input:focus, .filter-select:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 2px var(--primary-green-light);
+}
+
+.results-count {
+  font-size: 14px;
+  color: var(--monday-medium);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--monday-very-light);
 }
 
 .section-title {
@@ -1263,6 +1933,40 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  flex: 1;
+  justify-content: flex-end;
+}
+
+/* Activity Financial Stats */
+.activity-financial-stats {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.activity-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  padding: var(--spacing-xs);
+}
+
+.activity-stat-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--monday-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.activity-stat-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary-green);
+  line-height: 1;
 }
 
 .activity-status {
@@ -1435,6 +2139,20 @@ onMounted(() => {
     padding: var(--spacing-lg);
   }
 
+  .header-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .header-right {
+    justify-content: flex-start;
+  }
+
+  .financial-stats {
+    grid-template-columns: 1fr 1fr;
+    max-width: 100%;
+  }
+
   .project-widgets {
     flex-direction: column;
   }
@@ -1454,11 +2172,78 @@ onMounted(() => {
     align-items: flex-start;
     gap: var(--spacing-md);
   }
+
+  .stat-item {
+    padding: var(--spacing-sm);
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
+
+  .tab-navigation {
+    padding: 0 var(--spacing-md);
+  }
+
+  .tab {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 13px;
+    min-width: max-content;
+  }
+
+  .activity-financial-stats {
+    display: none;
+  }
+
+  .activity-actions {
+    gap: var(--spacing-sm);
+  }
+
+  .activities-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+
+  .filter-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1024px) {
   .form-grid.four-col {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .activity-financial-stats {
+    gap: var(--spacing-xs);
+  }
+
+  .activity-stat-item {
+    min-width: 50px;
+    padding: 2px;
+  }
+
+  .activity-stat-label {
+    font-size: 8px;
+  }
+
+  .activity-stat-value {
+    font-size: 10px;
   }
 }
 
@@ -1499,5 +2284,26 @@ onMounted(() => {
   white-space: pre-wrap;
   line-height: 1.5;
   color: var(--monday-medium-dark);
+}
+
+/* Consistent editable field styling */
+.control-input {
+  position: relative;
+}
+
+.form-control {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--monday-light);
+  border-radius: 6px;
+  font-size: var(--text-base);
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px rgba(63, 217, 33, 0.1);
 }
 </style>

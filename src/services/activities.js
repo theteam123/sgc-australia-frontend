@@ -3,6 +3,32 @@ import { getErpNextApiUrl, getApiKeyAuthHeader, fetchWithErrorHandling } from '.
 const baseUrl = getErpNextApiUrl();
 
 /**
+ * Create new activity
+ */
+export const createActivity = async (activityData) => {
+  try {
+    const response = await fetchWithErrorHandling(
+      `${baseUrl}/api/resource/Activity`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': getApiKeyAuthHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(activityData)
+      },
+      'create activity'
+    )
+    
+    const data = await response.json()
+    return data.data
+  } catch (error) {
+    console.error('Error creating activity:', error)
+    throw error
+  }
+}
+
+/**
  * Get a single Activity by name (ID)
  */
 export const getActivity = async (activityName) => {
@@ -113,41 +139,6 @@ export const getProjectActivities = async (projectCode) => {
   }
 };
 
-/**
- * Create a new Activity
- */
-export const createActivity = async (projectData, activityName = 'New Activity') => {
-  try {
-    const activityData = {
-      doctype: 'Activity',
-      activity_name: activityName,
-      project: projectData.name || projectData.project_code,
-      status: 'Open',
-      estimated_hours: 1.0
-    };
-
-    const response = await fetchWithErrorHandling(
-      `${baseUrl}/api/resource/Activity`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': getApiKeyAuthHeader(),
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(activityData)
-      },
-      'create activity',
-      activityName
-    );
-
-    const result = await response.json();
-    return result.data;
-  } catch (error) {
-    console.error('Error creating activity:', error);
-    throw error;
-  }
-};
 
 /**
  * Delete an Activity

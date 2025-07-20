@@ -405,9 +405,9 @@ onMounted(() => {
 @import '../styles/monday-design-system.css';
 
 .timeline-container {
-  padding: var(--spacing-lg);
-  max-width: 800px;
-  margin: 0 auto;
+  padding: var(--spacing-xl);
+  width: 100%;
+  margin: 0;
 }
 
 /* Action Buttons at Top */

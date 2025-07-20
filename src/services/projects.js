@@ -332,6 +332,28 @@ export const searchProjects = async (query) => {
 export const getDropdownOptions = async (doctype) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    
+    // Special handling for Project doctype to get project_code and project_name
+    if (doctype === 'Project') {
+      const response = await fetchWithErrorHandling(
+        `${baseUrl}/api/resource/Project?fields=["name","project_code","project_name"]`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': getApiKeyAuthHeader(),
+            'Content-Type': 'application/json'
+          }
+        },
+        'fetch project options'
+      )
+      
+      const data = await response.json()
+      return (data.data || []).map(project => ({
+        value: project.name,
+        label: `#${project.project_code} ${project.project_name}`
+      }))
+    }
+    
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/${encodeURIComponent(doctype)}`,
       {

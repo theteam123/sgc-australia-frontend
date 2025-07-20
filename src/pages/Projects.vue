@@ -8,7 +8,7 @@
             <FolderOpenIcon class="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 class="text-h1 mb-1">Projects Dashboard</h1>
+            <h1 class="text-h1 mb-1">Projects</h1>
             <p class="text-body text-monday-medium">Monitor and manage all your projects in one place</p>
           </div>
         </div>
@@ -31,37 +31,16 @@
 
     <!-- Main Content -->
     <div class="monday-main-content">
-      <!-- Quick Actions Bar -->
-      <div class="monday-card">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="monday-search">
-              <SearchIcon class="monday-search-icon" />
-              <input
-                type="text"
-                v-model="searchQuery"
-                placeholder="Search projects, clients, or codes..."
-                class="monday-search-input"
-              />
-            </div>
-            <select class="form-select" v-model="selectedStatus">
-              <option value="">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Planning">Planning</option>
-              <option value="Completed">Completed</option>
-              <option value="On Hold">On Hold</option>
-            </select>
-          </div>
-          <div class="flex items-center gap-2">
-            <button class="btn-monday btn-tertiary btn-small" @click="exportData">
-              <DownloadIcon class="w-4 h-4 mr-1" />
-              Export
-            </button>
-            <button class="btn-monday btn-tertiary btn-small" @click="toggleFilters">
-              <FilterIcon class="w-4 h-4 mr-1" />
-              Filters
-            </button>
-          </div>
+      <!-- Search Section -->
+      <div class="mb-6">
+        <div class="relative">
+          <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input 
+            type="text" 
+            v-model="searchQuery"
+            placeholder="Search projects..." 
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+          />
         </div>
       </div>
 
@@ -85,31 +64,36 @@
 
       <!-- Dashboard Content -->
       <div v-else>
-        <ProjectDashboard />
+        <ProjectDashboard :searchQuery="searchQuery" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   FolderOpenIcon,
   RefreshCwIcon,
   PlusIcon,
   SearchIcon,
-  DownloadIcon,
-  FilterIcon,
   AlertTriangleIcon
 } from 'lucide-vue-next';
 import ProjectDashboard from '../components/ProjectDashboard.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 
+const router = useRouter();
+
 // State management
 const loading = ref(false);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
-const selectedStatus = ref('');
+
+// Debug: Watch for changes in search query
+watch(searchQuery, (newValue) => {
+  console.log('Search query changed in Projects.vue:', newValue);
+});
 
 // Methods
 const refreshData = () => {
@@ -123,19 +107,9 @@ const refreshData = () => {
 };
 
 const createProject = () => {
-  // Navigate to create project form
-  console.log('Creating new project...');
+  router.push('/projects/new');
 };
 
-const exportData = () => {
-  // Export projects data
-  console.log('Exporting project data...');
-};
-
-const toggleFilters = () => {
-  // Toggle advanced filters
-  console.log('Toggling filters...');
-};
 
 onMounted(() => {
   // Initialize data
@@ -152,14 +126,7 @@ onMounted(() => {
   gap: 1.5rem;
 }
 
-.monday-search {
-  position: relative;
-  min-width: 300px;
-}
-
-.form-select {
-  min-width: 120px;
-}
+/* Filter section styling handled by Tailwind classes */
 
 /* Status Badge Enhancement */
 .status-badge {

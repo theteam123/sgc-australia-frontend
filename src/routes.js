@@ -14,7 +14,10 @@ import VoiceAssistant from './views/VoiceAssistant.vue'
 import ApiTester from './pages/ApiTester.vue'
 import Projects from './pages/Projects.vue'
 import ProjectDetail from './pages/ProjectDetail.vue'
+import NewProject from './pages/NewProject.vue'
 import ActivityEdit from './pages/ActivityEdit.vue'
+import NewActivity from './pages/NewActivity.vue'
+import Organisation from './pages/Organisation.vue'
 import { useAuthStore } from './stores/auth'
 import { useErrorStore } from './stores/error'
 
@@ -171,6 +174,14 @@ const routes = [
     }
   },
   {
+    path: '/projects/new',
+    name: 'new-project',
+    component: NewProject,
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
     path: '/projects/:id',
     name: 'project-detail',
     component: ProjectDetail,
@@ -186,6 +197,22 @@ const routes = [
     meta: { 
       requiresAuth: true
       // Remove role restrictions for now to test the page
+    }
+  },
+  {
+    path: '/organisation/:id',
+    name: 'organisation-detail',
+    component: Organisation,
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/activity/new',
+    name: 'new-activity',
+    component: NewActivity,
+    meta: { 
+      requiresAuth: true
     }
   },
   {
