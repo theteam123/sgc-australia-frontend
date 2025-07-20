@@ -158,7 +158,7 @@
                       :field="field"
                       v-model="formData[field.fieldname]"
                       :formData="formData"
-                      :parentDocName="route.params.id as string"
+                      :parentDocName="getDocTypeName()"
                     />
                   </div>
                 </div>
@@ -228,7 +228,7 @@
                     :field="field"
                     v-model="formData[field.fieldname]"
                     :formData="formData"
-                    :parentDocName="route.params.id as string"
+                    :parentDocName="getDocTypeName()"
                   />
                 </div>
               </div>
@@ -343,6 +343,26 @@ interface DocType {
 
 const router = useRouter();
 const route = useRoute();
+
+// Helper function to extract DocType name from route
+const getDocTypeName = () => {
+  const path = route.path;
+  if (path.includes('/sales-invoice/')) {
+    return 'Sales Invoice';
+  } else if (path.includes('/sales-order/')) {
+    return 'Sales Order';
+  } else if (path.includes('/purchase-order/')) {
+    return 'Purchase Order';
+  } else if (path.includes('/purchase-invoice/')) {
+    return 'Purchase Invoice';
+  } else if (path.includes('/timesheet/')) {
+    return 'Timesheet';
+  } else if (path.includes('/staffing-plan/')) {
+    return 'Staffing Plan';
+  }
+  // Fallback to route.params.id if no match found (for existing routes)
+  return route.params.id as string;
+};
 const authStore = useAuthStore();
 const successStore = useSuccessStore();
 const loading = ref(false);
@@ -402,7 +422,10 @@ const canGoPrevious = computed(() => {
 
 const fetchDocType = async () => {
   try {
-    const response = await getDocTypeData(route.params.id as string);
+    const docTypeName = getDocTypeName();
+    console.log('DocType name extracted:', docTypeName);
+    
+    const response = await getDocTypeData(docTypeName);
     console.log('DocType response:', response);
     
     if (!response || !response.docs || !Array.isArray(response.docs) || response.docs.length === 0) {
@@ -414,7 +437,7 @@ const fetchDocType = async () => {
     docTypeTable.value = response.docs.filter(doc => doc.istable === 1);
 
     docType.value = {
-      name: docTypeData.name || route.params.id,
+      name: docTypeData.name || docTypeName,
       description: docTypeData.description || '',
       fields: docTypeData.fields || []
     };
@@ -546,7 +569,7 @@ const handleSubmit = async () => {
           const response = await uploadFile(
             fileToUpload,
             field.parent || '', // doctype
-            route.params.id as string, // docname
+            getDocTypeName(), // docname
             false // isPrivate
           );
           
@@ -571,7 +594,7 @@ const handleSubmit = async () => {
     try {
       // Only proceed with form submission if there were no upload errors
       if (!error.value) {
-        const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
+        const response = await createDoctypeSubmission(getDocTypeName(), formDataToSubmit);
         // Show success message
         successStore.showSuccess('Form submitted successfully!');
         
@@ -591,13 +614,76 @@ const handleSubmit = async () => {
                 submitted.value = true;
               } else {
                 // Handle other redirect values here if needed
-                router.push(`/documents/${route.params.id}`);
+              // Redirect back to the project page based on DocType
+              const projectId = route.query.projectId;
+              if (projectId) {
+                const docTypeName = getDocTypeName();
+                if (docTypeName === 'Sales Invoice') {
+                  router.push(`/projects/${projectId}/sales-invoices`);
+                } else if (docTypeName === 'Sales Order') {
+                  router.push(`/projects/${projectId}/sales-orders`);
+                } else if (docTypeName === 'Purchase Order') {
+                  router.push(`/projects/${projectId}/purchase-orders`);
+                } else if (docTypeName === 'Purchase Invoice') {
+                  router.push(`/projects/${projectId}/purchase-invoices`);
+                } else if (docTypeName === 'Timesheet') {
+                  router.push(`/projects/${projectId}/timesheets`);
+                } else if (docTypeName === 'Staffing Plan') {
+                  router.push(`/projects/${projectId}/staffing-plans`);
+                } else {
+                  router.push(`/projects/${projectId}`);
+                }
+              } else {
+                router.push(`/documents/${getDocTypeName()}`);
+              }
               }
             } else {
-              router.push(`/documents/${route.params.id}`);
+            // Redirect back to the project page based on DocType
+            const projectId = route.query.projectId;
+            if (projectId) {
+              const docTypeName = getDocTypeName();
+              if (docTypeName === 'Sales Invoice') {
+                router.push(`/projects/${projectId}/sales-invoices`);
+              } else if (docTypeName === 'Sales Order') {
+                router.push(`/projects/${projectId}/sales-orders`);
+              } else if (docTypeName === 'Purchase Order') {
+                router.push(`/projects/${projectId}/purchase-orders`);
+              } else if (docTypeName === 'Purchase Invoice') {
+                router.push(`/projects/${projectId}/purchase-invoices`);
+              } else if (docTypeName === 'Timesheet') {
+                router.push(`/projects/${projectId}/timesheets`);
+              } else if (docTypeName === 'Staffing Plan') {
+                router.push(`/projects/${projectId}/staffing-plans`);
+              } else {
+                router.push(`/projects/${projectId}`);
+              }
+            } else {
+              router.push(`/documents/${getDocTypeName()}`);
+            }
             }
           } else {
-            router.push(`/documents/${route.params.id}`);
+          // Redirect back to the project page based on DocType
+          const projectId = route.query.projectId;
+          if (projectId) {
+            const docTypeName = getDocTypeName();
+            if (docTypeName === 'Sales Invoice') {
+              router.push(`/projects/${projectId}/sales-invoices`);
+            } else if (docTypeName === 'Sales Order') {
+              router.push(`/projects/${projectId}/sales-orders`);
+            } else if (docTypeName === 'Purchase Order') {
+              router.push(`/projects/${projectId}/purchase-orders`);
+            } else if (docTypeName === 'Purchase Invoice') {
+              router.push(`/projects/${projectId}/purchase-invoices`);
+            } else if (docTypeName === 'Timesheet') {
+              router.push(`/projects/${projectId}/timesheets`);
+            } else if (docTypeName === 'Staffing Plan') {
+              router.push(`/projects/${projectId}/staffing-plans`);
+            } else {
+              router.push(`/projects/${projectId}`);
+            }
+          } else {
+            router.push(`/documents/${getDocTypeName()}`);
+          }
           }
         }, 1000);
       }
@@ -610,7 +696,7 @@ const handleSubmit = async () => {
         downloadWatermarkedFiles(filesToDownload.value.map(fileData => ({
           file: fileData.file,
           fieldname: fileData.fieldname,
-          docTypeId: route.params.id as string
+          docTypeId: getDocTypeName()
         })));
       }
     }

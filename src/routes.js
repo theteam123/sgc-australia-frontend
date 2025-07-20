@@ -189,6 +189,102 @@ const routes = [
     }
   },
   {
+    path: '/projects/:projectId/sales-orders',
+    name: 'project-sales-orders',
+    component: () => import('./pages/SalesOrder.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/sales-order/new-sales-order-:formId',
+    name: 'new-sales-order',
+    component: () => import('./pages/DocTypeForm.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/projects/:projectId/sales-invoices',
+    name: 'project-sales-invoices',
+    component: () => import('./pages/SalesInvoice.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/sales-invoice/new-sales-invoice-:formId',
+    name: 'new-sales-invoice',
+    component: () => import('./pages/DocTypeForm.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/projects/:projectId/purchase-orders',
+    name: 'project-purchase-orders',
+    component: () => import('./pages/PurchaseOrder.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/purchase-order/new-purchase-order-:formId',
+    name: 'new-purchase-order',
+    component: () => import('./pages/DocTypeForm.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/projects/:projectId/purchase-invoices',
+    name: 'project-purchase-invoices',
+    component: () => import('./pages/PurchaseInvoice.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/purchase-invoice/new-purchase-invoice-:formId',
+    name: 'new-purchase-invoice',
+    component: () => import('./pages/DocTypeForm.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/projects/:projectId/timesheets',
+    name: 'project-timesheets',
+    component: () => import('./pages/Timesheet.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/timesheet/new-timesheet-:formId',
+    name: 'new-timesheet',
+    component: () => import('./pages/DocTypeForm.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/projects/:projectId/staffing-plans',
+    name: 'project-staffing-plans',
+    component: () => import('./pages/StaffingPlan.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/staffing-plan/new-staffing-plan-:formId',
+    name: 'new-staffing-plan',
+    component: () => import('./pages/DocTypeForm.vue'),
+    meta: { 
+      requiresAuth: true
+    }
+  },
+  {
     path: '/test-api',
     name: 'test-api',
     component: ApiTester,

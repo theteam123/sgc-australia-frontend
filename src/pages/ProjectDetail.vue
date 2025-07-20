@@ -39,73 +39,63 @@
       <div class="project-widgets">
         <div class="widget-column">
           <div class="widget-row">
-            <div class="widget-item">
+            <div class="widget-item clickable-widget" @click="navigateToDocuments('sales-orders')">
               <span class="widget-label">Sales Order</span>
               <div class="widget-stats">
                 <span class="widget-count">{{ project.sales_order_count || 0 }}</span>
                 <span class="widget-value">{{ formatCurrency(project.sales_order_value || 0) }}</span>
               </div>
-              <button class="widget-add-btn" @click="addWidget('sales-order')">+</button>
+              <button class="widget-add-btn" @click.stop="addWidget('sales-order')">+</button>
             </div>
-            <div class="widget-item">
+            <div class="widget-item clickable-widget" @click="navigateToDocuments('sales-invoices')">
               <span class="widget-label">Sales Invoice</span>
               <div class="widget-stats">
                 <span class="widget-count">{{ project.sales_invoice_count || 0 }}</span>
                 <span class="widget-value">{{ formatCurrency(project.sales_invoice_value || 0) }}</span>
               </div>
-              <button class="widget-add-btn" @click="addWidget('sales-invoice')">+</button>
+              <button class="widget-add-btn" @click.stop="addWidget('sales-invoice')">+</button>
             </div>
           </div>
         </div>
         
         <div class="widget-column">
           <div class="widget-row">
-            <div class="widget-item">
+            <div class="widget-item clickable-widget" @click="navigateToDocuments('purchase-orders')">
               <span class="widget-label">Purchase Order</span>
               <div class="widget-stats">
                 <span class="widget-count">{{ project.purchase_order_count || 0 }}</span>
                 <span class="widget-value">{{ formatCurrency(project.purchase_order_value || 0) }}</span>
               </div>
-              <button class="widget-add-btn" @click="addWidget('purchase-order')">+</button>
+              <button class="widget-add-btn" @click.stop="addWidget('purchase-order')">+</button>
             </div>
-            <div class="widget-item">
+            <div class="widget-item clickable-widget" @click="navigateToDocuments('purchase-invoices')">
               <span class="widget-label">Purchase Invoice</span>
               <div class="widget-stats">
                 <span class="widget-count">{{ project.purchase_invoice_count || 0 }}</span>
                 <span class="widget-value">{{ formatCurrency(project.purchase_invoice_value || 0) }}</span>
               </div>
-              <button class="widget-add-btn" @click="addWidget('purchase-invoice')">+</button>
+              <button class="widget-add-btn" @click.stop="addWidget('purchase-invoice')">+</button>
             </div>
           </div>
         </div>
         
         <div class="widget-column">
           <div class="widget-row">
-            <div class="widget-item">
-              <span class="widget-label">Activity</span>
-              <div class="widget-stats">
-                <span class="widget-count">{{ activities.length }}</span>
-              </div>
-              <button class="widget-add-btn" @click="addWidget('activity')">+</button>
-            </div>
-            <div class="widget-item">
+            <div class="widget-item clickable-widget" @click="navigateToDocuments('timesheets')">
               <span class="widget-label">Timesheet</span>
               <div class="widget-stats">
                 <span class="widget-count">{{ project.timesheet_count || 9 }}</span>
                 <span class="widget-value">{{ project.labour_hours }}h</span>
               </div>
-              <button class="widget-add-btn" @click="addWidget('timesheet')">+</button>
+              <button class="widget-add-btn" @click.stop="addWidget('timesheet')">+</button>
             </div>
-          </div>
-          <div class="widget-row">
-            <div class="widget-item">
+            <div class="widget-item clickable-widget" @click="navigateToDocuments('staffing-plans')">
               <span class="widget-label">Staffing Plan</span>
               <div class="widget-stats">
                 <span class="widget-count">{{ project.staffing_plan_count || 1 }}</span>
               </div>
-              <button class="widget-add-btn" @click="addWidget('staffing-plan')">+</button>
+              <button class="widget-add-btn" @click.stop="addWidget('staffing-plan')">+</button>
             </div>
-            <div class="widget-item widget-placeholder"></div>
           </div>
         </div>
       </div>
@@ -685,44 +675,44 @@ const addWidget = async (widgetType: string) => {
     return;
   }
 
-  try {
-    loading.value = true;
-    let result;
+  const projectId = route.params.id as string;
 
+  try {
     switch (widgetType) {
       case 'sales-order':
-        result = await createSalesOrder(project.value);
-        alert(`Sales Order created successfully: ${result.name}`);
+        // Generate a unique form ID and navigate to Vue frontend form
+        const salesOrderFormId = `${project.value.name?.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+        router.push(`/sales-order/new-sales-order-${salesOrderFormId}?project=${encodeURIComponent(project.value.name)}&projectId=${encodeURIComponent(projectId)}`);
         break;
         
       case 'sales-invoice':
-        result = await createSalesInvoice(project.value);
-        alert(`Sales Invoice created successfully: ${result.name}`);
+        // Generate a unique form ID and navigate to Vue frontend form
+        const salesInvoiceFormId = `${project.value.name?.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+        router.push(`/sales-invoice/new-sales-invoice-${salesInvoiceFormId}?project=${encodeURIComponent(project.value.name)}&projectId=${encodeURIComponent(projectId)}`);
         break;
         
       case 'purchase-order':
-        result = await createPurchaseOrder(project.value);
-        alert(`Purchase Order created successfully: ${result.name}`);
+        // Generate a unique form ID and navigate to Vue frontend form
+        const purchaseOrderFormId = `${project.value.name?.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+        router.push(`/purchase-order/new-purchase-order-${purchaseOrderFormId}?project=${encodeURIComponent(project.value.name)}&projectId=${encodeURIComponent(projectId)}`);
         break;
         
       case 'purchase-invoice':
-        result = await createPurchaseInvoice(project.value);
-        alert(`Purchase Invoice created successfully: ${result.name}`);
-        break;
-        
-      case 'activity':
-        result = await createActivity(project.value, 'New Project Activity');
-        alert(`Activity created successfully: ${result.name}`);
+        // Generate a unique form ID and navigate to Vue frontend form
+        const purchaseInvoiceFormId = `${project.value.name?.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+        router.push(`/purchase-invoice/new-purchase-invoice-${purchaseInvoiceFormId}?project=${encodeURIComponent(project.value.name)}&projectId=${encodeURIComponent(projectId)}`);
         break;
         
       case 'timesheet':
-        result = await createTimesheet(project.value, 'Default Employee');
-        alert(`Timesheet created successfully: ${result.name}`);
+        // Generate a unique form ID and navigate to Vue frontend form
+        const timesheetFormId = `${project.value.name?.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+        router.push(`/timesheet/new-timesheet-${timesheetFormId}?project=${encodeURIComponent(project.value.name)}&projectId=${encodeURIComponent(projectId)}`);
         break;
         
       case 'staffing-plan':
-        result = await createStaffingPlan(project.value);
-        alert(`Staffing Plan created successfully: ${result.name}`);
+        // Generate a unique form ID and navigate to Vue frontend form
+        const staffingPlanFormId = `${project.value.name?.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+        router.push(`/staffing-plan/new-staffing-plan-${staffingPlanFormId}?project=${encodeURIComponent(project.value.name)}&projectId=${encodeURIComponent(projectId)}`);
         break;
         
       default:
@@ -730,20 +720,28 @@ const addWidget = async (widgetType: string) => {
         alert('Unknown document type');
     }
 
-    // Optionally refresh project data to update counts
+    // Optionally refresh project data to update counts (for non-activity cases)
     await loadProject();
     
   } catch (error) {
-    console.error('Error creating document:', error);
-    alert(`Error creating document: ${error.message}`);
-  } finally {
-    loading.value = false;
+    console.error('Error opening form:', error);
+    alert(`Error opening form: ${error.message}`);
   }
 };
 
 const selectActivity = (activity: any) => {
   console.log('Selected activity:', activity);
   // Implement activity selection logic
+};
+
+const navigateToDocuments = (documentType: string) => {
+  const projectId = route.params.id as string;
+  router.push({
+    name: `project-${documentType}`,
+    params: {
+      projectId: projectId
+    }
+  });
 };
 
 const editActivity = (activity: any) => {
@@ -1049,6 +1047,28 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.clickable-widget {
+  cursor: pointer;
+}
+
+.clickable-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+  border-color: var(--primary-green-light);
+  background: var(--primary-green-light);
+}
+
+.clickable-widget:hover .widget-label {
+  color: var(--primary-green);
+  font-weight: 600;
+}
+
+.clickable-widget:hover .widget-add-btn {
+  background: var(--primary-green);
+  color: white;
 }
 
 .widget-placeholder {
