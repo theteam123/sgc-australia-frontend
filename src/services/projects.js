@@ -81,6 +81,7 @@ const mapProjectFields = async (erpProject) => {
     industry_sector: industrySectorName,
     industry_sector_id: erpProject.industry_sector,
     description: erpProject.description || 'No description available.',
+    custom_scope_of_work: erpProject.custom_scope_of_work || '',
     priority: 'Medium', // Default value
     estimate_opening_date: erpProject.estimate_opening_date,
     estimate_closing_date: erpProject.estimate_closing_date,

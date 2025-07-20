@@ -13,7 +13,20 @@
           <h1 class="project-title">{{ project.project_name }}</h1>
           <p class="project-number">Project #{{ project.project_code }}</p>
         </div>
-        <span class="status-badge">{{ project.status }}</span>
+        <select 
+          v-if="isEditing"
+          v-model="project.status" 
+          class="status-select"
+          data-fieldtype="Select" 
+          data-fieldname="status" 
+          data-doctype="Project"
+        >
+          <option value="Opportunity">Opportunity</option>
+          <option value="Estimate">Estimate</option>
+          <option value="Project">Project</option>
+          <option value="Archived">Archived</option>
+        </select>
+        <span v-else :class="['status-badge', getStatusClass(project.status)]">{{ project.status }}</span>
       </div>
     </div>
 
@@ -25,20 +38,26 @@
             <div class="info-label">Client</div>
             <div class="info-value large">{{ project.organisation }}</div>
           </div>
-          <div class="info-item">
-            <div class="info-label">Priority</div>
-            <div class="info-value large">{{ project.priority || 'Medium' }}</div>
+        </div>
+
+        <div class="info-item scope-of-work">
+          <div class="info-label">Scope of Work</div>
+          <div class="info-value">
+            <textarea 
+              v-if="isEditing"
+              v-model="project.custom_scope_of_work" 
+              class="form-control scope-textarea"
+              data-fieldtype="Text" 
+              data-fieldname="custom_scope_of_work" 
+              data-doctype="Project"
+              placeholder="Enter scope of work details..."
+              spellcheck="false"
+              aria-label="Scope of Work"
+            ></textarea>
+            <div v-else class="scope-display">
+              {{ project.custom_scope_of_work || 'No scope of work defined.' }}
+            </div>
           </div>
-        </div>
-
-        <div class="info-item">
-          <div class="info-label">Work Type</div>
-          <div class="info-value">{{ project.work_type }}</div>
-        </div>
-
-        <div class="info-item">
-          <div class="info-label">Description</div>
-          <div class="info-value">{{ project.description || 'No description available.' }}</div>
         </div>
 
         <div class="progress-section">
@@ -516,8 +535,11 @@
       <!-- Activity Tab -->
       <div v-show="activeTab === 'activity'" class="tab-pane">
         <div class="activity-section">
-          <h3 class="section-title">Project Activity</h3>
-          <p>Activity content will be displayed here.</p>
+          <TimelineView 
+            :doctype="'Project'" 
+            :docname="project.name"
+            v-if="project.name"
+          />
         </div>
       </div>
     </div>
@@ -537,6 +559,7 @@ import {
   createTimesheet, 
   createStaffingPlan
 } from '../services/documents';
+import TimelineView from '../components/TimelineView.vue';
 
 // Types
 interface Activity {
@@ -599,7 +622,11 @@ const loadProject = async () => {
     ]);
     
     project.value = projectData || {};
-    originalProject.value = { ...projectData };
+    // Ensure custom_scope_of_work field exists
+    if (!project.value.custom_scope_of_work) {
+      project.value.custom_scope_of_work = '';
+    }
+    originalProject.value = { ...project.value };
     permissions.value = projectPermissions;
     
     // Load dropdown options if user has write permission
@@ -662,6 +689,21 @@ const getCompletionPercentage = (): number => {
   if (project.value.status === 'Active') return 75;
   if (project.value.status === 'Planning') return 25;
   return 0;
+};
+
+const getStatusClass = (status: string): string => {
+  switch (status) {
+    case 'Opportunity':
+      return 'status-opportunity';
+    case 'Estimate':
+      return 'status-estimate';
+    case 'Project':
+      return 'status-project';
+    case 'Archived':
+      return 'status-archived';
+    default:
+      return 'status-default';
+  }
 };
 
 const addWidget = async (widgetType: string) => {
@@ -875,13 +917,57 @@ onMounted(() => {
 }
 
 .status-badge {
-  background: var(--accent-green-light);
-  color: var(--accent-green);
   padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--border-radius-xl);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+  border: none;
+  display: inline-block;
+}
+
+.status-badge.status-opportunity {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status-badge.status-estimate {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-badge.status-project {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status-badge.status-archived {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.status-badge.status-default {
+  background: var(--accent-green-light);
+  color: var(--accent-green);
+}
+
+.status-select {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-xl);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 2px solid var(--monday-light);
+  background: white;
+  color: var(--monday-dark);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px rgba(63, 217, 33, 0.1);
 }
 
 /* Project Overview */
@@ -1382,5 +1468,44 @@ onMounted(() => {
   .project-detail-stats {
     grid-template-columns: 1fr;
   }
+}
+
+/* Scope of Work Styles */
+.scope-of-work {
+  width: 100%;
+}
+
+.scope-of-work .info-value {
+  width: 100%;
+}
+
+.scope-textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: var(--spacing-md);
+  border: 1px solid var(--monday-light);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.scope-textarea:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px rgba(63, 217, 33, 0.1);
+}
+
+.scope-display {
+  padding: var(--spacing-md);
+  background: var(--monday-background);
+  border: 1px solid var(--monday-light);
+  border-radius: 6px;
+  min-height: 150px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: var(--monday-medium-dark);
 }
 </style>
