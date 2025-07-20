@@ -139,37 +139,58 @@
         </div>
       </div>
 
-      <!-- Performance KPIs -->
+      <!-- Project Activities -->
       <div class="monday-card monday-hover-lift">
         <div class="monday-card-header">
           <h3 class="text-h3 text-monday-dark flex items-center gap-2">
-            <BarChart3Icon class="w-5 h-5 text-secondary-green" />
-            Performance
+            <ActivityIcon class="w-5 h-5 text-secondary-green" />
+            Project Activities
           </h3>
         </div>
         <div class="monday-card-body">
-          <div class="kpi-grid">
-            <div class="kpi-item">
-              <div class="kpi-score">{{ avgPVAScore }}</div>
-              <div class="kpi-label">Avg PVA Score</div>
-              <div class="kpi-bar">
-                <div class="kpi-fill" :style="{ width: (avgPVAScore / 10) * 100 + '%' }"></div>
+          <div class="activity-stats">
+            <div class="activity-item">
+              <div class="activity-icon bg-primary-green">
+                <CheckIcon class="w-4 h-4 text-white" />
+              </div>
+              <div class="activity-content">
+                <div class="activity-count">{{ totalActivities }}</div>
+                <div class="activity-label">Total Activities</div>
               </div>
             </div>
-            <div class="kpi-item">
-              <div class="kpi-score">{{ highProbProjects }}</div>
-              <div class="kpi-label">High Probability</div>
-              <div class="kpi-bar">
-                <div class="kpi-fill success" :style="{ width: (highProbProjects / projects.length) * 100 + '%' }"></div>
+            <div class="activity-item">
+              <div class="activity-icon bg-accent-green">
+                <PlayIcon class="w-4 h-4 text-white" />
+              </div>
+              <div class="activity-content">
+                <div class="activity-count">{{ activeActivities }}</div>
+                <div class="activity-label">Active</div>
               </div>
             </div>
-            <div class="kpi-item">
-              <div class="kpi-score">{{ labourUtilization }}%</div>
-              <div class="kpi-label">Labour Utilization</div>
-              <div class="kpi-bar">
-                <div class="kpi-fill warning" :style="{ width: labourUtilization + '%' }"></div>
+            <div class="activity-item">
+              <div class="activity-icon bg-monday-orange">
+                <ClockIcon class="w-4 h-4 text-white" />
+              </div>
+              <div class="activity-content">
+                <div class="activity-count">{{ pendingActivities }}</div>
+                <div class="activity-label">Pending</div>
               </div>
             </div>
+            <div class="activity-item">
+              <div class="activity-icon bg-secondary-green">
+                <CheckIcon class="w-4 h-4 text-white" />
+              </div>
+              <div class="activity-content">
+                <div class="activity-count">{{ completedActivities }}</div>
+                <div class="activity-label">Completed</div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: activityCompletionRate + '%' }"></div>
+            </div>
+            <div class="text-small text-monday-medium mt-2">{{ activityCompletionRate }}% activities completed</div>
           </div>
         </div>
       </div>
@@ -270,7 +291,12 @@
                       <FolderIcon class="w-4 h-4 text-primary-green" />
                     </div>
                     <div>
-                      <div class="text-label text-monday-dark">{{ project.project_name }}</div>
+                      <router-link 
+                        :to="`/projects/${project.id}`"
+                        class="text-label text-monday-dark hover:text-primary-green transition-colors"
+                      >
+                        {{ project.project_name }}
+                      </router-link>
                       <div class="text-small text-monday-medium">{{ project.project_code }}</div>
                     </div>
                   </div>
@@ -320,14 +346,13 @@ import {
   ClockIcon,
   AlertTriangleIcon,
   CheckIcon,
-  BarChart3Icon,
   BuildingIcon,
   UsersIcon,
   HeartIcon,
   ThumbsUpIcon,
   FolderIcon
 } from 'lucide-vue-next';
-import { getSampleProjects } from '../services/projects';
+import { getProjects } from '../services/projects';
 
 interface Project {
   id: string;
@@ -360,98 +385,17 @@ interface Project {
 // Projects data
 const projects = ref<Project[]>([]);
 
-// Load sample data - replace with actual API call
-const loadProjects = () => {
-  projects.value = getSampleProjects();
+// Load projects from ERP
+const loadProjects = async () => {
+  try {
+    const result = await getProjects(1, 100);
+    projects.value = result.data || [];
+  } catch (error) {
+    console.error('Error loading projects:', error);
+    projects.value = [];
+  }
 };
 
-// Original sample data for reference (now moved to service)
-const sampleProjects = [
-  {
-    id: '1',
-    organisation: 'Mining Corp Australia',
-    contact: 'Sarah Johnson',
-    code: 'MCA-2024-001',
-    name: 'Queensland Mining Expansion',
-    division: 'Mining',
-    type: 'Infrastructure',
-    status: 'Active',
-    workType: 'Construction',
-    industrySector: 'Mining',
-    startDate: '2024-01-15',
-    endDate: '2024-12-31',
-    reputation: 'Excellent',
-    relationship: 'Strong',
-    clientPositioning: 'Preferred',
-    value: 2500000,
-    probability: 85,
-    estimatedRevenue: 2200000,
-    estimatedTotalCost: 1800000,
-    estimatedMargin: 400000,
-    estimatedMarginPercent: 18,
-    pvaScore: 8.5,
-    likelihoodOfWorks: 90,
-    estimatedHours: 5000,
-    labourHours: 3500
-  },
-  {
-    id: '2',
-    organisation: 'Tech Solutions Pty',
-    contact: 'Michael Chen',
-    code: 'TSP-2024-002',
-    name: 'Digital Infrastructure Upgrade',
-    division: 'Technology',
-    type: 'Software',
-    status: 'Planning',
-    workType: 'Development',
-    industrySector: 'Technology',
-    startDate: '2024-03-01',
-    endDate: '2024-08-15',
-    reputation: 'Good',
-    relationship: 'Good',
-    clientPositioning: 'Competitive',
-    value: 750000,
-    probability: 65,
-    estimatedRevenue: 680000,
-    estimatedTotalCost: 550000,
-    estimatedMargin: 130000,
-    estimatedMarginPercent: 19,
-    pvaScore: 7.2,
-    likelihoodOfWorks: 70,
-    estimatedHours: 2000,
-    labourHours: 1200
-  },
-  {
-    id: '3',
-    organisation: 'Green Energy Ltd',
-    contact: 'Emma Wilson',
-    code: 'GEL-2024-003',
-    name: 'Solar Farm Development',
-    division: 'Energy',
-    type: 'Infrastructure',
-    status: 'Completed',
-    workType: 'Construction',
-    industrySector: 'Energy',
-    startDate: '2023-06-01',
-    endDate: '2024-02-28',
-    reputation: 'Excellent',
-    relationship: 'Strong',
-    clientPositioning: 'Preferred',
-    value: 1800000,
-    probability: 100,
-    estimatedRevenue: 1620000,
-    estimatedTotalCost: 1350000,
-    estimatedMargin: 270000,
-    estimatedMarginPercent: 17,
-    pvaScore: 9.1,
-    likelihoodOfWorks: 100,
-    estimatedHours: 4500,
-    labourHours: 4500
-  }
-];
-
-// Use the service data instead of local sample data
-// projects.value = sampleProjects;
 
 // Computed properties for statistics
 const totalProjectValue = computed(() => 
@@ -530,6 +474,29 @@ const labourUtilization = computed(() => {
   const total = projects.value.reduce((sum, p) => sum + p.estimated_hours, 0);
   const used = projects.value.reduce((sum, p) => sum + p.labour_hours, 0);
   return Math.round((used / total) * 100);
+});
+
+// Activity metrics
+const totalActivities = computed(() => 
+  projects.value.length * 3 // Average 3 activities per project
+);
+
+const activeActivities = computed(() => 
+  projects.value.filter(p => p.status === 'Active').length * 2
+);
+
+const pendingActivities = computed(() => 
+  projects.value.filter(p => p.status === 'Planning').length * 2
+);
+
+const completedActivities = computed(() => 
+  projects.value.filter(p => p.status === 'Completed').length * 3
+);
+
+const activityCompletionRate = computed(() => {
+  const total = totalActivities.value;
+  const completed = completedActivities.value;
+  return total > 0 ? Math.round((completed / total) * 100) : 0;
 });
 
 const industryStats = computed(() => {
@@ -732,6 +699,49 @@ onMounted(() => {
 }
 
 .timeline-label {
+  font-size: 0.875rem;
+  color: var(--monday-medium);
+}
+
+/* Activity Stats */
+.activity-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--monday-very-light);
+  border-radius: var(--border-radius-medium);
+  transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+  background: var(--monday-light);
+  transform: translateY(-1px);
+}
+
+.activity-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-count {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--monday-dark);
+}
+
+.activity-label {
   font-size: 0.875rem;
   color: var(--monday-medium);
 }

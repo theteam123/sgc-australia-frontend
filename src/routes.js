@@ -13,6 +13,7 @@ import DocTypeGenerator from './pages/DocTypeGenerator.vue'
 import VoiceAssistant from './views/VoiceAssistant.vue'
 import ApiTester from './pages/ApiTester.vue'
 import Projects from './pages/Projects.vue'
+import ProjectDetail from './pages/ProjectDetail.vue'
 import { useAuthStore } from './stores/auth'
 import { useErrorStore } from './stores/error'
 
@@ -163,6 +164,15 @@ const routes = [
     path: '/projects',
     name: 'projects',
     component: Projects,
+    meta: { 
+      requiresAuth: true
+      // Remove role restrictions for now to test the page
+    }
+  },
+  {
+    path: '/projects/:id',
+    name: 'project-detail',
+    component: ProjectDetail,
     meta: { 
       requiresAuth: true
       // Remove role restrictions for now to test the page

@@ -5,6 +5,10 @@ import { getApiUrl, getDomainConfig } from '../config/domains';
  * @returns {string} The ERPNext API URL
  */
 export const getErpNextApiUrl = () => {
+  // In development, use relative URL to leverage Vite proxy
+  if (import.meta.env.DEV) {
+    return '';
+  }
   return getApiUrl();
 };
 
