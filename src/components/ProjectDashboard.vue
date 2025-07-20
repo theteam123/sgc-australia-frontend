@@ -1,7 +1,111 @@
 <template>
   <div class="project-dashboard">
+    <!-- Projects Header -->
+    <div class="projects-header">
+      <h3 class="section-title">Projects</h3>
+      
+      <!-- Filter Controls -->
+      <div class="filter-controls">
+        <div class="filter-buttons">
+          <button class="btn-primary" @click="createNewProject">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+              <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+              <path d="M9 15h6"></path>
+              <path d="M12 18v-6"></path>
+            </svg>
+            New Project
+          </button>
+          <button class="btn-secondary" @click="handleRefresh" v-if="props.onRefresh">
+            <RefreshCwIcon class="w-5 h-5" />
+            Refresh
+          </button>
+          <button class="btn-secondary" @click="showFilters = !showFilters">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
+    <!-- Search and Filter Section -->
+    <div class="search-filter-section">
+      <!-- Global Search -->
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input 
+            v-model="searchQuery"
+            type="text" 
+            placeholder="Search projects..."
+            class="search-input"
+          >
+        </div>
+      </div>
 
+      <!-- Filters -->
+      <div class="filters-container" v-show="showFilters">
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label class="filter-label">Status</label>
+            <select v-model="selectedStatus" class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Planning">Planning</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Archived">Archived</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">Project Type</label>
+            <select v-model="selectedProjectType" class="filter-select">
+              <option value="">All Types</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Residential">Residential</option>
+              <option value="Infrastructure">Infrastructure</option>
+              <option value="Industrial">Industrial</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">Client</label>
+            <input 
+              v-model="clientFilter"
+              type="text" 
+              placeholder="Filter by client..."
+              class="filter-input"
+            >
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">Value Range</label>
+            <select v-model="valueRange" class="filter-select">
+              <option value="">All Values</option>
+              <option value="0-50000">$0 - $50K</option>
+              <option value="50000-100000">$50K - $100K</option>
+              <option value="100000-500000">$100K - $500K</option>
+              <option value="500000+">$500K+</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <button @click="clearFilters" class="btn-clear-filters">
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Count -->
+      <div class="results-count">
+        Showing {{ filteredProjects.length }} of {{ projects.length }} projects
+      </div>
+    </div>
 
     <!-- Recent Projects Table -->
     <div class="monday-card">
@@ -71,15 +175,28 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import {
-  FolderIcon
+  FolderIcon,
+  RefreshCwIcon
 } from 'lucide-vue-next';
 import { getProjects } from '../services/projects';
+
+const router = useRouter();
 
 // Props
 const props = defineProps<{
   searchQuery?: string;
+  onRefresh?: () => void;
 }>();
+
+// Filter state
+const searchQuery = ref('');
+const showFilters = ref(false);
+const selectedStatus = ref('');
+const selectedProjectType = ref('');
+const clientFilter = ref('');
+const valueRange = ref('');
 
 interface Project {
   id: string;
@@ -128,25 +245,92 @@ const loadProjects = async () => {
 
 // Computed properties for statistics
 const filteredProjects = computed(() => {
-  console.log('Filtering projects with query:', props.searchQuery);
+  console.log('Filtering projects with query:', searchQuery.value);
   console.log('Total projects:', projects.value.length);
   
-  if (!props.searchQuery || props.searchQuery.trim() === '') {
-    console.log('No search query, returning all projects');
-    return projects.value;
+  let filtered = projects.value;
+  
+  // Apply search query filter
+  if (searchQuery.value && searchQuery.value.trim() !== '') {
+    const query = searchQuery.value.toLowerCase().trim();
+    filtered = filtered.filter(project => 
+      (project.project_name || '').toString().toLowerCase().includes(query) ||
+      (project.project_code || '').toString().toLowerCase().includes(query) ||
+      (project.organisation || '').toString().toLowerCase().includes(query) ||
+      (project.status || '').toString().toLowerCase().includes(query)
+    );
   }
   
-  const query = props.searchQuery.toLowerCase().trim();
-  const filtered = projects.value.filter(project => 
-    (project.project_name || '').toString().toLowerCase().includes(query) ||
-    (project.project_code || '').toString().toLowerCase().includes(query) ||
-    (project.organisation || '').toString().toLowerCase().includes(query) ||
-    (project.status || '').toString().toLowerCase().includes(query)
-  );
+  // Apply external search query prop filter
+  if (props.searchQuery && props.searchQuery.trim() !== '') {
+    const query = props.searchQuery.toLowerCase().trim();
+    filtered = filtered.filter(project => 
+      (project.project_name || '').toString().toLowerCase().includes(query) ||
+      (project.project_code || '').toString().toLowerCase().includes(query) ||
+      (project.organisation || '').toString().toLowerCase().includes(query) ||
+      (project.status || '').toString().toLowerCase().includes(query)
+    );
+  }
+  
+  // Apply status filter
+  if (selectedStatus.value) {
+    filtered = filtered.filter(project => project.status === selectedStatus.value);
+  }
+  
+  // Apply project type filter
+  if (selectedProjectType.value) {
+    filtered = filtered.filter(project => project.project_type === selectedProjectType.value);
+  }
+  
+  // Apply client filter
+  if (clientFilter.value && clientFilter.value.trim() !== '') {
+    const clientQuery = clientFilter.value.toLowerCase().trim();
+    filtered = filtered.filter(project => 
+      (project.organisation || '').toString().toLowerCase().includes(clientQuery)
+    );
+  }
+  
+  // Apply value range filter
+  if (valueRange.value) {
+    filtered = filtered.filter(project => {
+      const value = project.project_value || 0;
+      switch (valueRange.value) {
+        case '0-50000':
+          return value >= 0 && value <= 50000;
+        case '50000-100000':
+          return value > 50000 && value <= 100000;
+        case '100000-500000':
+          return value > 100000 && value <= 500000;
+        case '500000+':
+          return value > 500000;
+        default:
+          return true;
+      }
+    });
+  }
   
   console.log('Filtered projects:', filtered.length);
   return filtered;
 });
+
+// Filter methods
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedStatus.value = '';
+  selectedProjectType.value = '';
+  clientFilter.value = '';
+  valueRange.value = '';
+};
+
+const createNewProject = () => {
+  router.push('/projects/new');
+};
+
+const handleRefresh = () => {
+  if (props.onRefresh) {
+    props.onRefresh();
+  }
+};
 
 // Utility functions
 const formatCurrency = (amount: number): string => {
@@ -219,6 +403,197 @@ onMounted(() => {
   gap: 1.5rem;
   display: flex;
   flex-direction: column;
+}
+
+/* Projects Header */
+.projects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--monday-dark);
+  margin: 0;
+}
+
+.filter-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.filter-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.btn-primary, .btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-medium);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.btn-primary {
+  background: var(--primary-green);
+  color: white;
+  border-color: var(--primary-green);
+}
+
+.btn-primary:hover {
+  background: var(--primary-green-hover);
+  border-color: var(--primary-green-hover);
+}
+
+.btn-secondary {
+  background: var(--monday-white);
+  color: var(--monday-medium-dark);
+  border-color: var(--monday-light);
+}
+
+.btn-secondary:hover {
+  background: var(--monday-very-light);
+}
+
+/* Search and Filter Styles */
+.search-filter-section {
+  background: var(--monday-white);
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-lg);
+  margin-bottom: 0;
+}
+
+.search-container {
+  margin-bottom: var(--spacing-md);
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--monday-medium);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 40px;
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px var(--primary-green-light);
+}
+
+.filters-container {
+  border-top: 1px solid var(--monday-very-light);
+  padding-top: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--monday-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.filter-input, .filter-select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.filter-input:focus, .filter-select:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 2px var(--primary-green-light);
+}
+
+.filter-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--monday-very-light);
+}
+
+.btn-clear-filters, .btn-toggle-filters {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--monday-light);
+  border-radius: var(--border-radius-medium);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-clear-filters {
+  background: var(--monday-white);
+  color: var(--monday-medium-dark);
+}
+
+.btn-clear-filters:hover {
+  background: var(--monday-very-light);
+  border-color: var(--monday-medium);
+}
+
+.btn-toggle-filters {
+  background: var(--primary-green);
+  color: white;
+  border-color: var(--primary-green);
+}
+
+.btn-toggle-filters:hover {
+  background: var(--primary-green-hover);
+  border-color: var(--primary-green-hover);
+}
+
+.results-count {
+  font-size: 14px;
+  color: var(--monday-medium);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--monday-very-light);
 }
 
 
@@ -319,6 +694,36 @@ onMounted(() => {
 @media (max-width: 768px) {
   .kpi-grid {
     gap: 1rem;
+  }
+  
+  .projects-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+  
+  .filter-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-clear-filters {
+    width: 100%;
+    text-align: center;
   }
 }
 </style>
