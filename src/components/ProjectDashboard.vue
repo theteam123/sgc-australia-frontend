@@ -52,24 +52,14 @@
       <div class="filters-container" v-show="showFilters">
         <div class="filter-grid">
           <div class="filter-field">
-            <label class="filter-label">Status</label>
-            <select v-model="selectedStatus" class="filter-select">
-              <option value="">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Planning">Planning</option>
-              <option value="Completed">Completed</option>
-              <option value="On Hold">On Hold</option>
-              <option value="Archived">Archived</option>
-            </select>
-          </div>
-          <div class="filter-field">
-            <label class="filter-label">Project Type</label>
-            <select v-model="selectedProjectType" class="filter-select">
-              <option value="">All Types</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Residential">Residential</option>
-              <option value="Infrastructure">Infrastructure</option>
-              <option value="Industrial">Industrial</option>
+            <label class="filter-label">Division</label>
+            <select v-model="selectedDivision" class="filter-select">
+              <option value="">All Divisions</option>
+              <option value="Civil">Civil</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Mechanical">Mechanical</option>
+              <option value="Construction">Construction</option>
+              <option value="Engineering">Engineering</option>
             </select>
           </div>
           <div class="filter-field">
@@ -82,13 +72,44 @@
             >
           </div>
           <div class="filter-field">
-            <label class="filter-label">Value Range</label>
+            <label class="filter-label">Status</label>
+            <select v-model="selectedStatus" class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Planning">Planning</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Archived">Archived</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">Value</label>
             <select v-model="valueRange" class="filter-select">
               <option value="">All Values</option>
               <option value="0-50000">$0 - $50K</option>
               <option value="50000-100000">$50K - $100K</option>
               <option value="100000-500000">$100K - $500K</option>
               <option value="500000+">$500K+</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">% Complete</label>
+            <select v-model="completionRange" class="filter-select">
+              <option value="">All Completion</option>
+              <option value="0-25">0% - 25%</option>
+              <option value="25-50">25% - 50%</option>
+              <option value="50-75">50% - 75%</option>
+              <option value="75-100">75% - 100%</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">Margin %</label>
+            <select v-model="marginRange" class="filter-select">
+              <option value="">All Margins</option>
+              <option value="negative">Negative</option>
+              <option value="0-10">0% - 10%</option>
+              <option value="10-20">10% - 20%</option>
+              <option value="20+">20%+</option>
             </select>
           </div>
         </div>
@@ -115,6 +136,7 @@
             <thead>
               <tr>
                 <th class="monday-table-header text-left">Project</th>
+                <th class="monday-table-header text-left">Division</th>
                 <th class="monday-table-header text-left">Client</th>
                 <th class="monday-table-header text-left">Status</th>
                 <th class="monday-table-header text-left">Value</th>
@@ -139,6 +161,9 @@
                       <div class="text-small text-monday-medium">{{ project.project_code }}</div>
                     </div>
                   </div>
+                </td>
+                <td class="monday-table-cell">
+                  <div class="text-body text-monday-dark">{{ project.division }}</div>
                 </td>
                 <td class="monday-table-cell">
                   <div class="text-body text-monday-dark">{{ project.organisation }}</div>
@@ -193,10 +218,12 @@ const props = defineProps<{
 // Filter state
 const searchQuery = ref('');
 const showFilters = ref(false);
-const selectedStatus = ref('');
-const selectedProjectType = ref('');
+const selectedDivision = ref('');
 const clientFilter = ref('');
+const selectedStatus = ref('');
 const valueRange = ref('');
+const completionRange = ref('');
+const marginRange = ref('');
 
 interface Project {
   id: string;
@@ -272,14 +299,9 @@ const filteredProjects = computed(() => {
     );
   }
   
-  // Apply status filter
-  if (selectedStatus.value) {
-    filtered = filtered.filter(project => project.status === selectedStatus.value);
-  }
-  
-  // Apply project type filter
-  if (selectedProjectType.value) {
-    filtered = filtered.filter(project => project.project_type === selectedProjectType.value);
+  // Apply division filter
+  if (selectedDivision.value) {
+    filtered = filtered.filter(project => project.division === selectedDivision.value);
   }
   
   // Apply client filter
@@ -288,6 +310,11 @@ const filteredProjects = computed(() => {
     filtered = filtered.filter(project => 
       (project.organisation || '').toString().toLowerCase().includes(clientQuery)
     );
+  }
+  
+  // Apply status filter
+  if (selectedStatus.value) {
+    filtered = filtered.filter(project => project.status === selectedStatus.value);
   }
   
   // Apply value range filter
@@ -309,6 +336,44 @@ const filteredProjects = computed(() => {
     });
   }
   
+  // Apply completion range filter
+  if (completionRange.value) {
+    filtered = filtered.filter(project => {
+      const completion = getCompletionPercentage(project);
+      switch (completionRange.value) {
+        case '0-25':
+          return completion >= 0 && completion <= 25;
+        case '25-50':
+          return completion > 25 && completion <= 50;
+        case '50-75':
+          return completion > 50 && completion <= 75;
+        case '75-100':
+          return completion > 75 && completion <= 100;
+        default:
+          return true;
+      }
+    });
+  }
+  
+  // Apply margin range filter
+  if (marginRange.value) {
+    filtered = filtered.filter(project => {
+      const margin = project.estimated_margin_percent || 0;
+      switch (marginRange.value) {
+        case 'negative':
+          return margin < 0;
+        case '0-10':
+          return margin >= 0 && margin <= 10;
+        case '10-20':
+          return margin > 10 && margin <= 20;
+        case '20+':
+          return margin > 20;
+        default:
+          return true;
+      }
+    });
+  }
+  
   console.log('Filtered projects:', filtered.length);
   return filtered;
 });
@@ -316,10 +381,12 @@ const filteredProjects = computed(() => {
 // Filter methods
 const clearFilters = () => {
   searchQuery.value = '';
-  selectedStatus.value = '';
-  selectedProjectType.value = '';
+  selectedDivision.value = '';
   clientFilter.value = '';
+  selectedStatus.value = '';
   valueRange.value = '';
+  completionRange.value = '';
+  marginRange.value = '';
 };
 
 const createNewProject = () => {
