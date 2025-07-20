@@ -59,35 +59,35 @@ export const DOMAINS = {
         path: '/companies', 
         icon: 'BuildingOfficeIcon', 
         description: 'Companies', 
-        requiredRoles: ['SGCloud User', 'System Manager'] 
+        requiredRoles: ['SGCloud User', 'System Manager', 'Administrator'] 
       },
       { 
         name: 'Contacts', 
         path: '/contacts', 
         icon: 'UserIcon', 
         description: 'Contacts', 
-        requiredRoles: ['SGCloud User', 'System Manager'] 
+        requiredRoles: ['SGCloud User', 'System Manager', 'Administrator'] 
       },
       { 
         name: 'Leads', 
         path: '/leads', 
         icon: 'UserIcon', 
         description: 'Leads', 
-        requiredRoles: ['SGCloud User', 'System Manager'] 
+        requiredRoles: ['SGCloud User', 'System Manager', 'Administrator'] 
       },
       { 
         name: 'Opportunities', 
         path: '/opportunities', 
         icon: 'UserIcon', 
         description: 'Opportunities', 
-        requiredRoles: ['SGCloud User', 'System Manager'] 
+        requiredRoles: ['SGCloud User', 'System Manager', 'Administrator'] 
       },
       { 
         name: 'Activities', 
         path: '/activities', 
         icon: 'UserIcon', 
         description: 'Activities', 
-        requiredRoles: ['SGCloud User', 'System Manager'] 
+        requiredRoles: ['SGCloud User', 'System Manager', 'Administrator'] 
       } 
     ]
   },

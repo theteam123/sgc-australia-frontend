@@ -16,9 +16,12 @@ export default defineConfig({
     port: 3000, // or any port you prefer
     proxy: {
       '/api': {
-        target: 'http://localhost:3002',
+        target: 'https://ops.sgcloud.com.au',
         changeOrigin: true,
-        secure: false
+        secure: true,
+        headers: {
+          'Origin': 'https://ops.sgcloud.com.au'
+        }
       }
     }
   },

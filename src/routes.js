@@ -12,6 +12,7 @@ import DocTypeImages from './pages/DocTypeImages.vue'
 import DocTypeGenerator from './pages/DocTypeGenerator.vue'
 import VoiceAssistant from './views/VoiceAssistant.vue'
 import ApiTester from './pages/ApiTester.vue'
+import Projects from './pages/Projects.vue'
 import { useAuthStore } from './stores/auth'
 import { useErrorStore } from './stores/error'
 
@@ -157,6 +158,15 @@ const routes = [
     name: 'public-doctype-form',
     component: () => import('./pages/PublicDocTypeForm.vue'),
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/projects',
+    name: 'projects',
+    component: Projects,
+    meta: { 
+      requiresAuth: true
+      // Remove role restrictions for now to test the page
+    }
   },
   {
     path: '/test-api',

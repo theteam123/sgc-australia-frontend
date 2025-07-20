@@ -38,9 +38,11 @@ if (!isProduction) {
 
 // Create axios instance with default config
 const createAxiosInstance = () => {
-  const apiUrl = getErpNextApiUrl();
+  // Use proxy in development to avoid CORS issues
+  const baseURL = import.meta.env.DEV ? '' : getErpNextApiUrl();
+  
   return axios.create({
-    baseURL: apiUrl,
+    baseURL: baseURL,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'

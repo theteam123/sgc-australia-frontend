@@ -1,9 +1,26 @@
 <template>
-  <div class="p-8">
-    <!-- Portal Title -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">{{ pageTitle }}</h1>
-      <p v-if="isTaktecPortal" class="text-sm text-gray-500 mt-1">Viewing Taktec ERPNext Documents</p>
+  <div class="monday-layout">
+    <!-- Modern Header Section -->
+    <div class="monday-main-header">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="p-3 bg-gradient-to-r from-primary-green to-accent-green rounded-xl">
+            <FileIcon class="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 class="text-h1 mb-1">{{ pageTitle }}</h1>
+            <p v-if="isTaktecPortal" class="text-body text-monday-medium">Viewing Taktec ERPNext Documents</p>
+            <p v-else class="text-body text-monday-medium">Manage and organize your business documents</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="status-badge status-done">Live</span>
+          <button class="btn-monday btn-primary" @click="showModal = true">
+            <FilePlusIcon class="w-4 h-4 mr-2" />
+            Create New
+          </button>
+        </div>
+      </div>
     </div>
     
     <!-- Role Permissions Display -->
@@ -62,215 +79,241 @@
       </div>
     </div>
 
-    <!-- Search and Filter -->
-    <div class="mb-6 flex flex-col sm:flex-row gap-4">
-      <div class="flex-1">
-        <div class="relative">
-          <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            id="doctype-search"
-            v-model="searchQuery"
-            placeholder="Search ..."
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
-          />
+    <!-- Modern Search and Controls -->
+    <div class="monday-main-content">
+      <div class="monday-card">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div class="flex-1 max-w-md">
+            <div class="monday-search">
+              <SearchIcon class="monday-search-icon" />
+              <input
+                type="text"
+                id="doctype-search"
+                v-model="searchQuery"
+                placeholder="Search documents, types, or descriptions..."
+                class="monday-search-input"
+              />
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1 bg-monday-very-light rounded-lg p-1">
+              <button
+                @click="viewMode = 'grid'"
+                :class="[
+                  'btn-icon',
+                  viewMode === 'grid' ? 'bg-primary-green text-white' : 'text-monday-medium hover:bg-monday-white'
+                ]"
+                title="Grid View"
+              >
+                <GridIcon class="w-4 h-4" />
+              </button>
+              <button
+                @click="viewMode = 'list'"
+                :class="[
+                  'btn-icon',
+                  viewMode === 'list' ? 'bg-primary-green text-white' : 'text-monday-medium hover:bg-monday-white'
+                ]"
+                title="List View"
+              >
+                <ListIcon class="w-4 h-4" />
+              </button>
+            </div>
+            <button class="btn-monday btn-secondary" @click="fetchDocTypes()">
+              <span class="text-sm">Refresh</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div class="flex gap-4">
-        <button
-          @click="viewMode = 'grid'"
-          :class="[
-            'p-2 rounded-lg',
-            viewMode === 'grid' ? 'btn-primary text-white' : 'text-gray-600 hover:bg-gray-100'
-          ]"
-          title="Grid View"
-        >
-          <GridIcon class="w-5 h-5" />
-        </button>
-        <button
-          @click="viewMode = 'list'"
-          :class="[
-            'p-2 rounded-lg',
-            viewMode === 'list' ? 'btn-primary text-white' : 'text-gray-600 hover:bg-gray-100'
-          ]"
-          title="List View"
-        >
-          <ListIcon class="w-5 h-5" />
-        </button>
 
+      <!-- Stats Overview -->
+      <div class="monday-card">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-monday-very-light rounded-lg p-4 text-center">
+            <div class="text-h2 text-primary-green mb-1">{{ totalItems }}</div>
+            <div class="text-small text-monday-medium">Total Documents</div>
+          </div>
+          <div class="bg-monday-very-light rounded-lg p-4 text-center">
+            <div class="text-h2 text-accent-green mb-1">{{ docTypes.length }}</div>
+            <div class="text-small text-monday-medium">Showing</div>
+          </div>
+          <div class="bg-monday-very-light rounded-lg p-4 text-center">
+            <div class="text-h2 text-monday-orange mb-1">{{ docTypes.filter(d => d.permissions.create === 1).length }}</div>
+            <div class="text-small text-monday-medium">Can Create</div>
+          </div>
+          <div class="bg-monday-very-light rounded-lg p-4 text-center">
+            <div class="text-h2 text-secondary-green mb-1">{{ docTypes.filter(d => d.permissions.write === 1).length }}</div>
+            <div class="text-small text-monday-medium">Can Edit</div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- DocType Count -->
-    <div class="mb-4 text-sm text-gray-600">
-      Showing {{ docTypes.length }} of {{ totalItems }} documents
-    </div>
+      <!-- Loading State -->
+      <div v-if="loading" class="monday-card">
+        <LoadingSpinner message="Loading documents..." />
+      </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center items-center py-8">
-      <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
-    </div>
+      <!-- Error State -->
+      <div v-else-if="error" class="monday-card">
+        <div class="flex items-center gap-3 p-4 bg-monday-red-light rounded-lg">
+          <div class="w-8 h-8 bg-monday-red rounded-full flex items-center justify-center">
+            <span class="text-white font-bold">!</span>
+          </div>
+          <div>
+            <h3 class="text-h3 text-monday-red mb-1">Error Loading Documents</h3>
+            <p class="text-body text-monday-medium-dark">{{ error }}</p>
+          </div>
+        </div>
+      </div>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
-      {{ error }}
-    </div>
-
-    <!-- Content Area -->
-    <div v-else>
-      <!-- Grid View -->
+      <!-- Content Area -->
+      <div v-else>
+      <!-- Modern Grid View -->
       <div v-if="docTypes.length > 0 && viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="doctype in docTypes"
           :key="doctype.id"
-          class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+          class="monday-card monday-hover-lift group cursor-pointer"
+          @click="viewDocuments(doctype)"
         >
-          <div class="p-6">
-            <div class="flex justify-between items-start">
-              <div class="flex items-start gap-3">
-                <div class="p-2 bg-green-50 rounded-lg">
-                  <FileIcon class="w-8 h-8 text-green-600" />
-                </div>
-                <div>
-                  <h3 class="text-lg font-semibold text-gray-900">{{ doctype.name }}</h3>
-                  <p class="text-sm text-gray-500 mt-1">{{ doctype.description }}</p>
-                </div>
+          <!-- Card Header -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-start gap-3">
+              <div class="p-3 bg-gradient-to-br from-primary-green to-accent-green rounded-xl">
+                <FileIcon class="w-6 h-6 text-white" />
               </div>
-              <div class="flex gap-1">
-                <button
-                  @click="router.push(`/documents/${doctype.id}/new`)"
-                  v-if="doctype.permissions.create === 1"
-                  class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
-                  :title="`New ${doctype.name}`"
-                >
-                  <FilePlusIcon class="w-6 h-6" />
-                </button>
-                <button
-                  @click="viewDocuments(doctype)"
-                  class="text-white hover:text-black border  hover:bg-white btn-primary p-1 rounded"
-                  :title="`View ${doctype.name} submissions`"
-                >
-                  <FileTextIcon class="w-6 h-6" />
-                </button>
+              <div class="flex-1">
+                <h3 class="text-h3 text-monday-dark mb-1">{{ doctype.name }}</h3>
+                <p class="text-small text-monday-medium line-clamp-2">{{ doctype.description || 'No description available' }}</p>
               </div>
             </div>
-
-            <div class="mt-4">
-              <div class="flex flex-wrap gap-2">
-                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                  {{ doctype.module }}
-                </span>
-              </div>
-            </div>
-
-            <div class="mt-4 text-sm text-gray-500">
-              <div class="flex items-center gap-2">
-                <ClockIcon class="w-4 h-4" />
-                <span>Updated {{ formatDate(doctype.updated_at) }}</span>
-              </div>
-              <div class="flex items-center gap-2 mt-1">
+            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                @click.stop="router.push(`/documents/${doctype.id}/new`)"
+                v-if="doctype.permissions.create === 1"
+                class="btn-icon hover:bg-primary-green-light hover:text-primary-green"
+                :title="`New ${doctype.name}`"
+              >
+                <FilePlusIcon class="w-4 h-4" />
+              </button>
+              <button
+                @click.stop="viewDocuments(doctype)"
+                class="btn-icon hover:bg-accent-green-light hover:text-accent-green"
+                :title="`View ${doctype.name} submissions`"
+              >
                 <FileTextIcon class="w-4 h-4" />
-              </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Module Badge -->
+          <div class="mb-4">
+            <span class="px-3 py-1 text-xs font-medium rounded-full bg-primary-green-light text-primary-green">
+              {{ doctype.module }}
+            </span>
+          </div>
+
+          <!-- Permissions Grid -->
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="flex items-center gap-2">
+              <div :class="['w-2 h-2 rounded-full', doctype.permissions.create === 1 ? 'bg-accent-green' : 'bg-monday-light']" />
+              <span class="text-small text-monday-medium">Create</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div :class="['w-2 h-2 rounded-full', doctype.permissions.write === 1 ? 'bg-monday-orange' : 'bg-monday-light']" />
+              <span class="text-small text-monday-medium">Edit</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div :class="['w-2 h-2 rounded-full', doctype.permissions.delete === 1 ? 'bg-monday-red' : 'bg-monday-light']" />
+              <span class="text-small text-monday-medium">Delete</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div :class="['w-2 h-2 rounded-full', doctype.permissions.read === 1 ? 'bg-secondary-green' : 'bg-monday-light']" />
+              <span class="text-small text-monday-medium">Read</span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between pt-4 border-t border-monday-light">
+            <div class="flex items-center gap-2">
+              <ClockIcon class="w-4 h-4 text-monday-medium" />
+              <span class="text-small text-monday-medium">{{ formatDate(doctype.updated_at) }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-small text-monday-medium">{{ doctype.fields?.length || 0 }} fields</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- List View -->
-      <div v-else-if="docTypes.length > 0 && viewMode === 'list'" class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 table-fixed">
-            <thead class="bg-gray-50">
+      <!-- Modern List View -->
+      <div v-else-if="docTypes.length > 0 && viewMode === 'list'" class="monday-card">
+        <div class="monday-table">
+          <table class="w-full">
+            <thead>
               <tr>
-                <th 
-                  class="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
-                  :style="{ width: columnWidths.actions + 'px' }"
-                >
-                  Actions
-                  <div 
-                    class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
-                    @mousedown="startResize('actions', $event)"
-                    title="Drag to resize column"
-                  ></div>
-                </th>
-                <th 
-                  class="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
-                  :style="{ width: columnWidths.document + 'px' }"
-                >
-                  Document
-                  <div 
-                    class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
-                    @mousedown="startResize('document', $event)"
-                    title="Drag to resize column"
-                  ></div>
-                </th>
-                <th 
-                  class="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
-                  :style="{ width: columnWidths.category + 'px' }"
-                >
-                  Category
-                  <div 
-                    class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
-                    @mousedown="startResize('category', $event)"
-                    title="Drag to resize column"
-                  ></div>
-                </th>
-                <th 
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  :style="{ width: columnWidths.updated + 'px' }"
-                >
-                  Updated
-                </th>
+                <th class="monday-table-header text-left">Document</th>
+                <th class="monday-table-header text-left">Module</th>
+                <th class="monday-table-header text-left">Permissions</th>
+                <th class="monday-table-header text-left">Fields</th>
+                <th class="monday-table-header text-left">Updated</th>
+                <th class="monday-table-header text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="doctype in docTypes" :key="doctype.id" class="hover:bg-gray-50">
-                <td 
-                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                  :style="{ width: columnWidths.actions + 'px' }"
-                >
-                  <div class="flex justify-end gap-2">
-                    <button
-                      @click="router.push(`/documents/${doctype.id}/new`)"
-                      v-if="doctype.permissions.create === 1"
-                      class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
-                      title="New Submission"
-                    >
-                      <FilePlusIcon class="w-5 h-5" />
-                    </button>
-                    <button
-                      @click="viewDocuments(doctype)"
-                      class="text-white hover:text-black border  hover:bg-white btn-primary p-1 rounded"
-                      title="View Records"
-                    >
-                      <FileTextIcon class="w-5 h-5" />
-                    </button>
-                  </div>
-                </td>            
-                <td 
-                  class="px-6 py-4 whitespace-nowrap"
-                  :style="{ width: columnWidths.document + 'px' }"
-                >
-                  <div class="flex items-center">
-                    <div class="ml-4">
-                      <div class="text-sm font-medium text-gray-900">{{ doctype.name }}</div>
-                      <div class="text-sm text-gray-500">{{ doctype.module }}</div>
+            <tbody>
+              <tr v-for="doctype in docTypes" :key="doctype.id" class="monday-table-row group">
+                <td class="monday-table-cell">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 bg-gradient-to-br from-primary-green to-accent-green rounded-lg">
+                      <FileIcon class="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div class="text-label text-monday-dark">{{ doctype.name }}</div>
+                      <div class="text-small text-monday-medium">{{ doctype.description || 'No description' }}</div>
                     </div>
                   </div>
                 </td>
-                <td 
-                  class="px-6 py-4 whitespace-nowrap"
-                  :style="{ width: columnWidths.category + 'px' }"
-                >
-                  <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                    {{ typeof route.query.module === 'string' ? route.query.module.charAt(0).toUpperCase() + route.query.module.slice(1) : '' }}
+                <td class="monday-table-cell">
+                  <span class="px-3 py-1 text-xs font-medium rounded-full bg-primary-green-light text-primary-green">
+                    {{ doctype.module }}
                   </span>
                 </td>
-                <td 
-                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                  :style="{ width: columnWidths.updated + 'px' }"
-                >
-                  {{ formatDate(doctype.updated_at) }}
+                <td class="monday-table-cell">
+                  <div class="flex gap-1">
+                    <div v-if="doctype.permissions.create === 1" class="w-2 h-2 bg-accent-green rounded-full" title="Create" />
+                    <div v-if="doctype.permissions.write === 1" class="w-2 h-2 bg-monday-orange rounded-full" title="Edit" />
+                    <div v-if="doctype.permissions.delete === 1" class="w-2 h-2 bg-monday-red rounded-full" title="Delete" />
+                    <div v-if="doctype.permissions.read === 1" class="w-2 h-2 bg-secondary-green rounded-full" title="Read" />
+                  </div>
+                </td>
+                <td class="monday-table-cell">
+                  <span class="text-small text-monday-medium">{{ doctype.fields?.length || 0 }} fields</span>
+                </td>
+                <td class="monday-table-cell">
+                  <div class="flex items-center gap-2">
+                    <ClockIcon class="w-4 h-4 text-monday-medium" />
+                    <span class="text-small text-monday-medium">{{ formatDate(doctype.updated_at) }}</span>
+                  </div>
+                </td>
+                <td class="monday-table-cell text-right">
+                  <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      @click="router.push(`/documents/${doctype.id}/new`)"
+                      v-if="doctype.permissions.create === 1"
+                      class="btn-monday btn-primary btn-small"
+                      title="New Submission"
+                    >
+                      <FilePlusIcon class="w-4 h-4 mr-1" />
+                      New
+                    </button>
+                    <button
+                      @click="viewDocuments(doctype)"
+                      class="btn-monday btn-secondary btn-small"
+                      title="View Records"
+                    >
+                      <FileTextIcon class="w-4 h-4 mr-1" />
+                      View
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -278,50 +321,65 @@
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div v-else class="text-center py-12">
-        <FileIcon class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No documents</h3>
-        <p class="mt-1 text-sm text-gray-500">Get started by creating a new document.</p>
+      <!-- Modern Empty State -->
+      <div v-else class="monday-card text-center py-12">
+        <div class="p-6 bg-gradient-to-br from-primary-green-light to-accent-green-light rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+          <FileIcon class="w-12 h-12 text-primary-green" />
+        </div>
+        <h3 class="text-h2 text-monday-dark mb-2">No documents found</h3>
+        <p class="text-body text-monday-medium mb-6">Get started by creating your first document type or adjust your search criteria.</p>
+        <div class="flex justify-center gap-3">
+          <button class="btn-monday btn-primary" @click="showModal = true">
+            <FilePlusIcon class="w-4 h-4 mr-2" />
+            Create Document Type
+          </button>
+          <button class="btn-monday btn-secondary" @click="searchQuery = ''; fetchDocTypes()">
+            Clear Search
+          </button>
+        </div>
       </div>
 
-      <!-- Pagination Controls -->
-      <div v-if="docTypes.length > 0" class="mt-6 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <button
-            @click="goToPage(currentPage - 1)"
-            :disabled="currentPage === 1"
-            class="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span class="text-sm text-gray-600">
-            Page {{ currentPage }} of {{ totalPages }}
-          </span>
-          <button
-            @click="goToPage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            class="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
-          >
-            Next
-          </button>
+      <!-- Modern Pagination -->
+      <div v-if="docTypes.length > 0" class="monday-card">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <button
+                @click="goToPage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                class="btn-monday btn-secondary btn-small"
+              >
+                Previous
+              </button>
+              <span class="text-body text-monday-medium px-4">
+                Page {{ currentPage }} of {{ totalPages }}
+              </span>
+              <button
+                @click="goToPage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                class="btn-monday btn-secondary btn-small"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-body text-monday-medium">Items per page:</span>
+            <select
+              v-model="pageSize"
+              @change="fetchDocTypes(1)"
+              class="form-select w-20"
+            >
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-600">Items per page:</span>
-          <select
-            v-model="pageSize"
-            @change="fetchDocTypes(1)"
-            class="rounded border-gray-300 text-sm"
-          >
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </div>
+      </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -340,6 +398,7 @@ import {
   GridIcon,
   ListIcon
 } from 'lucide-vue-next';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 
 interface DocTypeField {
   label: string;
@@ -711,8 +770,8 @@ const stopResize = () => {
   document.body.classList.remove('table-resizing');
 };
 
-// Change default to list view - will be overridden in onMounted based on screen size
-const viewMode = ref('list');
+// Change default to grid view for better visual appeal
+const viewMode = ref('grid');
 
 // Add function to fetch role permissions
 const fetchRolePermissions = async () => {
@@ -735,16 +794,14 @@ onMounted(async () => {
   const mediaQuery = window.matchMedia('(max-width: 768px)');
   mediaQueryMatches.value = mediaQuery.matches;
   
-  // Set default view mode based on screen size
-  viewMode.value = mediaQuery.matches ? 'grid' : 'list';
+  // Set default view mode based on screen size - prefer grid for modern look
+  viewMode.value = mediaQuery.matches ? 'grid' : 'grid';
   
   const handleResize = (e: MediaQueryListEvent) => {
     mediaQueryMatches.value = e.matches;
-    // Update view mode when screen size changes
+    // Update view mode when screen size changes - keep grid as default
     if (e.matches && viewMode.value === 'list') {
       viewMode.value = 'grid';
-    } else if (!e.matches && viewMode.value === 'grid') {
-      viewMode.value = 'list';
     }
   };
   
@@ -763,24 +820,184 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Prevent text selection during resize */
-.table-resizing {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+@import '../styles/monday-design-system.css';
+
+/* Modern Card Animations */
+.monday-card {
+  transition: all 0.3s ease;
 }
 
-/* Custom resize handle styles */
-.resize-handle {
+.monday-hover-lift {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.monday-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Card Grid Enhancements */
+.group:hover .opacity-0 {
+  opacity: 1;
+}
+
+/* Status Dots */
+.w-2.h-2 {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-to-r {
+  background: var(--gradient-green);
+}
+
+.bg-gradient-to-br {
+  background: var(--gradient-secondary);
+}
+
+/* Modern Table Styling */
+.monday-table tbody tr:hover {
+  background-color: var(--monday-very-light);
   transition: background-color 0.2s ease;
 }
 
-.resize-handle:hover {
-  background-color: rgba(59, 130, 246, 0.3);
+/* Enhanced Search Styling */
+.monday-search-input {
+  padding-left: 2.5rem;
+  transition: all 0.2s ease;
 }
 
-.resize-handle:active {
-  background-color: rgba(59, 130, 246, 0.5);
+.monday-search-input:focus {
+  box-shadow: 0 0 0 3px var(--primary-green-light);
+  border-color: var(--primary-green);
+}
+
+/* Button Group Styling */
+.bg-monday-very-light {
+  background-color: var(--monday-very-light);
+}
+
+/* Line Clamp Utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Enhanced Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.monday-card {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* Staggered Animation for Cards */
+.monday-card:nth-child(1) { animation-delay: 0.1s; }
+.monday-card:nth-child(2) { animation-delay: 0.2s; }
+.monday-card:nth-child(3) { animation-delay: 0.3s; }
+.monday-card:nth-child(4) { animation-delay: 0.4s; }
+.monday-card:nth-child(5) { animation-delay: 0.5s; }
+.monday-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Loading States */
+.loading-skeleton {
+  background: linear-gradient(90deg, var(--monday-very-light) 25%, var(--monday-light) 50%, var(--monday-very-light) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Color Overrides for Modern Design */
+.text-primary-green {
+  color: var(--primary-green);
+}
+
+.text-accent-green {
+  color: var(--accent-green);
+}
+
+.text-monday-orange {
+  color: var(--monday-orange);
+}
+
+.text-secondary-green {
+  color: var(--secondary-green);
+}
+
+.bg-primary-green-light {
+  background-color: var(--primary-green-light);
+}
+
+.bg-accent-green-light {
+  background-color: var(--accent-green-light);
+}
+
+/* Modern Form Elements */
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23676879' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 36px;
+}
+
+/* Enhanced Button Styling */
+.btn-small {
+  padding: 4px 8px;
+  font-size: 12px;
+  min-height: 28px;
+}
+
+/* Modern Status Indicators */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 60px;
+  justify-content: center;
+}
+
+.status-done {
+  background-color: var(--accent-green-light);
+  color: var(--accent-green);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .monday-main-header {
+    padding: var(--spacing-lg);
+  }
+  
+  .monday-main-content {
+    padding: 0 var(--spacing-lg);
+  }
+  
+  .monday-card {
+    padding: var(--spacing-lg);
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style> 
