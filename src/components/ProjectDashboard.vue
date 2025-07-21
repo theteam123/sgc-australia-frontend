@@ -54,12 +54,12 @@
           <div class="filter-field">
             <label class="filter-label">Division</label>
             <select v-model="selectedDivision" class="filter-select">
-              <option value="">All Divisions</option>
-              <option value="Civil">Civil</option>
-              <option value="Electrical">Electrical</option>
-              <option value="Mechanical">Mechanical</option>
-              <option value="Construction">Construction</option>
-              <option value="Engineering">Engineering</option>
+              <option value="">Select Division</option>
+              <option value="PRO">PRO</option>
+              <option value="ADM">ADM</option>
+              <option value="AUT">AUT</option>
+              <option value="ELC">ELC</option>
+              <option value="TSD">TSD</option>
             </select>
           </div>
           <div class="filter-field">
@@ -263,6 +263,14 @@ const loadProjects = async () => {
     projects.value = result.data || [];
     console.log('Loaded projects:', projects.value.length);
     console.log('Sample project:', projects.value[0]);
+    // Debug division values
+    if (projects.value.length > 0) {
+      console.log('Division values in projects:', projects.value.map(p => ({ 
+        name: p.project_name, 
+        division: p.division,
+        divisionType: typeof p.division 
+      })));
+    }
   } catch (error) {
     console.error('Error loading projects:', error);
     projects.value = [];
@@ -300,8 +308,23 @@ const filteredProjects = computed(() => {
   }
   
   // Apply division filter
-  if (selectedDivision.value) {
-    filtered = filtered.filter(project => project.division === selectedDivision.value);
+  if (selectedDivision.value && selectedDivision.value.trim() !== '') {
+    console.log('Filtering by division:', selectedDivision.value);
+    console.log('Projects before division filter:', filtered.length);
+    console.log('Projects with divisions:', filtered.map(p => ({ name: p.project_name, division: p.division })));
+    filtered = filtered.filter(project => {
+      const projectDivision = project.division || '';
+      // Check for exact match with division name
+      if (projectDivision === selectedDivision.value) {
+        return true;
+      }
+      // Check if division contains the selected value (for partial matches)
+      if (projectDivision.toString().toLowerCase().includes(selectedDivision.value.toLowerCase())) {
+        return true;
+      }
+      return false;
+    });
+    console.log('Projects after division filter:', filtered.length);
   }
   
   // Apply client filter
