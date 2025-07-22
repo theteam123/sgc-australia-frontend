@@ -111,6 +111,7 @@ export const createSalesInvoice = async (projectData, salesOrder = null) => {
 export const createPurchaseOrder = async (projectData) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     
     const purchaseOrderData = {
       project: projectData.project_code,
@@ -134,7 +135,7 @@ export const createPurchaseOrder = async (projectData) => {
       {
         method: 'POST',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(purchaseOrderData)
@@ -360,12 +361,13 @@ export const getDocument = async (doctype, name) => {
 export const getProjectDocuments = async (doctype, projectCode) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/${doctype}?filters=[["project","=","${projectCode}"]]`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
