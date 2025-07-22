@@ -131,6 +131,24 @@
     <!-- Recent Projects Table -->
     <div class="monday-card">
       <div class="monday-card-body">
+        <!-- Debug Information -->
+        <div v-if="isDev" style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+          <h4>Debug Information:</h4>
+          <p><strong>Projects loaded:</strong> {{ projects.length }}</p>
+          <p><strong>Filtered projects:</strong> {{ filteredProjects.length }}</p>
+          <p><strong>Loading state:</strong> {{ loading ? 'Loading...' : 'Complete' }}</p>
+          <p><strong>Environment:</strong> DEV MODE</p>
+          <div v-if="projects.length > 0">
+            <p><strong>First project:</strong></p>
+            <pre style="font-size: 12px; background: white; padding: 5px;">{{ JSON.stringify(projects[0], null, 2) }}</pre>
+          </div>
+          <div v-else>
+            <p><strong>No projects found</strong></p>
+            <p style="color: red;">This might indicate an API authentication issue.</p>
+            <p>Try visiting <a href="/documents/Project" target="_blank">/documents/Project</a> to see if projects are accessible via the documents interface.</p>
+          </div>
+        </div>
+        
         <div class="monday-table">
           <table class="w-full">
             <thead>
@@ -145,6 +163,12 @@
               </tr>
             </thead>
             <tbody>
+              <tr v-if="filteredProjects.length === 0" class="monday-table-row">
+                <td colspan="7" class="monday-table-cell text-center" style="padding: 40px;">
+                  <div v-if="loading">Loading projects...</div>
+                  <div v-else>No projects found</div>
+                </td>
+              </tr>
               <tr v-for="project in filteredProjects" :key="project.id" class="monday-table-row group">
                 <td class="monday-table-cell">
                   <div class="flex items-center gap-3">
@@ -255,34 +279,33 @@ interface Project {
 
 // Projects data
 const projects = ref<Project[]>([]);
+const loading = ref(false);
+const isDev = ref(false); // Disable debug mode - projects are now working correctly
 
 // Load projects from ERP
 const loadProjects = async () => {
+  loading.value = true;
+  
   try {
     const result = await getProjects(1, 100);
     projects.value = result.data || [];
-    console.log('Loaded projects:', projects.value.length);
-    console.log('Sample project:', projects.value[0]);
-    // Debug division values
+    
     if (projects.value.length > 0) {
-      console.log('Division values in projects:', projects.value.map(p => ({ 
-        name: p.project_name, 
-        division: p.division,
-        divisionType: typeof p.division 
-      })));
+      console.log('✅ Projects loaded successfully:', projects.value.length, 'projects');
+    } else {
+      console.log('⚠️ No projects found');
     }
   } catch (error) {
-    console.error('Error loading projects:', error);
+    console.error('❌ Error loading projects:', error);
     projects.value = [];
+  } finally {
+    loading.value = false;
   }
 };
 
 
 // Computed properties for statistics
 const filteredProjects = computed(() => {
-  console.log('Filtering projects with query:', searchQuery.value);
-  console.log('Total projects:', projects.value.length);
-  
   let filtered = projects.value;
   
   // Apply search query filter
@@ -309,9 +332,6 @@ const filteredProjects = computed(() => {
   
   // Apply division filter
   if (selectedDivision.value && selectedDivision.value.trim() !== '') {
-    console.log('Filtering by division:', selectedDivision.value);
-    console.log('Projects before division filter:', filtered.length);
-    console.log('Projects with divisions:', filtered.map(p => ({ name: p.project_name, division: p.division })));
     filtered = filtered.filter(project => {
       const projectDivision = project.division || '';
       // Check for exact match with division name
@@ -324,7 +344,6 @@ const filteredProjects = computed(() => {
       }
       return false;
     });
-    console.log('Projects after division filter:', filtered.length);
   }
   
   // Apply client filter
@@ -397,7 +416,6 @@ const filteredProjects = computed(() => {
     });
   }
   
-  console.log('Filtered projects:', filtered.length);
   return filtered;
 });
 

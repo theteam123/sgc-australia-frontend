@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Project API Test</h1>
+    <button onclick="testAPI()">Test Basic Projects API</button>
+    <button onclick="testSpecificFields()">Test with Specific Fields</button>
+    <button onclick="testSingleProject()">Test Single Project</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = 'Testing basic projects API...';
+            
+            try {
+                const response = await fetch('/api/resource/Project?limit=5', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                resultElement.textContent = `Status: ${response.status}\n\n` + JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                console.error('API Error:', error);
+                resultElement.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testSpecificFields() {
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = 'Testing with specific fields...';
+            
+            try {
+                // Encode the fields parameter properly
+                const fields = encodeURIComponent('["name","project_name","project_code","status","organisation","division"]');
+                const response = await fetch(`/api/resource/Project?limit=5&fields=${fields}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('Specific fields response:', data);
+                
+                resultElement.textContent = JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                console.error('Specific fields error:', error);
+                resultElement.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testSingleProject() {
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = 'Testing single project...';
+            
+            try {
+                // First get the list to find a project name
+                const listResponse = await fetch('/api/resource/Project?limit=1', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const listData = await listResponse.json();
+                console.log('Project list:', listData);
+                
+                if (listData.data && listData.data.length > 0) {
+                    const projectName = listData.data[0].name;
+                    console.log('Testing single project:', projectName);
+                    
+                    const response = await fetch(`/api/resource/Project/${projectName}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    console.log('Single project response:', data);
+                    
+                    resultElement.textContent = `Single project (${projectName}):\n\n` + JSON.stringify(data, null, 2);
+                } else {
+                    resultElement.textContent = 'No projects found in list';
+                }
+                
+            } catch (error) {
+                console.error('Single project error:', error);
+                resultElement.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

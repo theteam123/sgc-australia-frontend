@@ -1,8 +1,17 @@
 import { getErpNextApiUrl, getApiKeyAuthHeader, fetchWithErrorHandling } from '../utils/api'
+import { getCurrentToken } from './oauth'
 
 /**
  * Projects API service
  */
+
+/**
+ * Get OAuth auth header
+ */
+const getOAuthAuthHeader = async () => {
+  const token = await getCurrentToken()
+  return token ? `Bearer ${token}` : null
+}
 
 /**
  * Fetch linked document name
@@ -12,12 +21,14 @@ const getLinkedDocumentName = async (doctype, id) => {
   
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
+    
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/${encodeURIComponent(doctype)}/${id}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -135,12 +146,14 @@ export const getProjects = async (page = 1, pageSize = 20, search = '', status =
     })
 
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
+    
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Project?${params}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -178,12 +191,13 @@ export const getProjects = async (page = 1, pageSize = 20, search = '', status =
 export const getProject = async (id) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Project/${id}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -203,12 +217,13 @@ export const getProject = async (id) => {
 export const createProject = async (projectData) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Project`,
       {
         method: 'POST',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(projectData)
@@ -228,12 +243,13 @@ export const createProject = async (projectData) => {
 export const updateProject = async (id, projectData) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Project/${id}`,
       {
         method: 'PUT',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(projectData)
@@ -254,12 +270,13 @@ export const updateProject = async (id, projectData) => {
 export const deleteProject = async (id) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Project/${id}`,
       {
         method: 'DELETE',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -335,12 +352,13 @@ export const getDropdownOptions = async (doctype) => {
     
     // Special handling for Project doctype to get project_code and project_name
     if (doctype === 'Project') {
+      const authHeader = await getOAuthAuthHeader()
       const response = await fetchWithErrorHandling(
         `${baseUrl}/api/resource/Project?fields=["name","project_code","project_name"]`,
         {
           method: 'GET',
           headers: {
-            'Authorization': getApiKeyAuthHeader(),
+            'Authorization': authHeader || getApiKeyAuthHeader(),
             'Content-Type': 'application/json'
           }
         },
@@ -354,12 +372,13 @@ export const getDropdownOptions = async (doctype) => {
       }))
     }
     
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/${encodeURIComponent(doctype)}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -400,12 +419,13 @@ export const getDropdownOptions = async (doctype) => {
 export const getProjectPermissions = async (projectId) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/method/frappe.client.get_doc_permissions?doctype=Project&docname=${projectId}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
