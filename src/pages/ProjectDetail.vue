@@ -177,6 +177,13 @@
       >
         Forms
       </div>
+      <div 
+        class="tab" 
+        :class="{ active: activeTab === 'tasks' }"
+        @click="activeTab = 'tasks'"
+      >
+        Tasks
+      </div>
     </div>
 
     <!-- Tab Content -->
@@ -722,6 +729,23 @@
             </div>
             <h3 class="coming-soon-title">Forms</h3>
             <p class="coming-soon-description">Custom forms and data collection tools will be available here soon.</p>
+            <span class="coming-soon-badge">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks Tab -->
+      <div v-show="activeTab === 'tasks'" class="tab-pane">
+        <div class="coming-soon-section">
+          <div class="coming-soon-content">
+            <div class="coming-soon-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3l8-8"></path>
+                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9s4.03-9 9-9c1.51 0 2.93 0.37 4.18 1.03"></path>
+              </svg>
+            </div>
+            <h3 class="coming-soon-title">Tasks</h3>
+            <p class="coming-soon-description">Task management and tracking tools will be available here soon.</p>
             <span class="coming-soon-badge">Coming Soon</span>
           </div>
         </div>

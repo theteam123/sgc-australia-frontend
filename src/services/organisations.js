@@ -1,19 +1,29 @@
 import { getErpNextApiUrl, getApiKeyAuthHeader, fetchWithErrorHandling } from '../utils/api'
+import { getCurrentToken } from './oauth'
 
 /**
  * Organisations API service
  */
 
+/**
+ * Get OAuth auth header
+ */
+const getOAuthAuthHeader = async () => {
+  const token = await getCurrentToken()
+  return token ? `Bearer ${token}` : null
+}
+
 // Get organisation by ID
 export const getOrganisation = async (id) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Organisation/${id}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -33,12 +43,13 @@ export const getOrganisation = async (id) => {
 export const updateOrganisation = async (id, organisationData) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Organisation/${id}`,
       {
         method: 'PUT',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(organisationData)
@@ -59,12 +70,13 @@ export const updateOrganisation = async (id, organisationData) => {
 export const getOrganisationPermissions = async (organisationId) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/method/frappe.client.get_doc_permissions?doctype=Organisation&docname=${organisationId}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -106,12 +118,13 @@ export const getOrganisationPermissions = async (organisationId) => {
 export const createOrganisation = async (organisationData) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Organisation`,
       {
         method: 'POST',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(organisationData)
@@ -131,12 +144,13 @@ export const createOrganisation = async (organisationData) => {
 export const deleteOrganisation = async (id) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Organisation/${id}`,
       {
         method: 'DELETE',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -155,12 +169,13 @@ export const deleteOrganisation = async (id) => {
 export const getOrganisations = async () => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Organisation?fields=["name","customer_name"]&limit_page_length=None`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },

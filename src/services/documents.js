@@ -1,8 +1,17 @@
 import { getErpNextApiUrl, getApiKeyAuthHeader, fetchWithErrorHandling } from '../utils/api'
+import { getCurrentToken } from './oauth'
 
 /**
  * Document creation service for ERPNext doctypes
  */
+
+/**
+ * Get OAuth auth header
+ */
+const getOAuthAuthHeader = async () => {
+  const token = await getCurrentToken()
+  return token ? `Bearer ${token}` : null
+}
 
 /**
  * Create a new Sales Order
@@ -10,6 +19,7 @@ import { getErpNextApiUrl, getApiKeyAuthHeader, fetchWithErrorHandling } from '.
 export const createSalesOrder = async (projectData) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     
     const salesOrderData = {
       project: projectData.project_code,
@@ -33,7 +43,7 @@ export const createSalesOrder = async (projectData) => {
       {
         method: 'POST',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(salesOrderData)
@@ -55,6 +65,7 @@ export const createSalesOrder = async (projectData) => {
 export const createSalesInvoice = async (projectData, salesOrder = null) => {
   try {
     const baseUrl = getErpNextApiUrl()
+    const authHeader = await getOAuthAuthHeader()
     
     const salesInvoiceData = {
       sales_order: salesOrder?.name || '',
@@ -78,7 +89,7 @@ export const createSalesInvoice = async (projectData, salesOrder = null) => {
       {
         method: 'POST',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(salesInvoiceData)
