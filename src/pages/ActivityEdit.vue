@@ -60,7 +60,7 @@
               <input 
                 type="text" 
                 class="form-input" 
-                :value="activity.project" 
+                :value="projectName" 
                 readonly
                 data-fieldtype="Link"
                 data-fieldname="project"
@@ -189,24 +189,24 @@
           <h4 class="subsection-title">Task Hours</h4>
           <div class="form-grid three-col">
             <div class="form-field">
-              <label class="form-label">Completion <span class="required">*</span></label>
+              <label class="form-label">Progress <span class="required">*</span></label>
               <input 
                 v-if="permissions.write"
-                v-model.number="activity.completion" 
+                v-model.number="activity.progress" 
                 type="number" 
                 class="form-input"
                 min="0"
                 max="100"
                 placeholder="0"
                 data-fieldtype="Float"
-                data-fieldname="completion"
+                data-fieldname="progress"
                 data-doctype="Activity"
               >
               <input 
                 v-else
                 type="text" 
                 class="form-input" 
-                :value="activity.completion || 0" 
+                :value="activity.progress || 0" 
                 readonly
               >
               <div class="help-text">Percentage of Task Completed</div>
@@ -245,10 +245,10 @@
             <div class="progress-bar-container">
               <div class="progress-bar-header">
                 <span class="progress-label">Completion Progress</span>
-                <span class="progress-percentage">{{ activity.completion || 0 }}%</span>
+                <span class="progress-percentage">{{ activity.progress || 0 }}%</span>
               </div>
               <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: (activity.completion || 0) + '%' }"></div>
+                <div class="progress-fill" :style="{ width: (activity.progress || 0) + '%' }"></div>
               </div>
             </div>
             
@@ -288,7 +288,7 @@ interface Activity {
   estimated_hours?: number;
   start_date?: string;
   end_date?: string;
-  completion?: number;
+  progress?: number;
   burnt_hours?: number;
   remaining_hours?: number;
   creation?: string;
@@ -306,7 +306,7 @@ const activity = ref<Activity>({
   activity_name: '',
   project: '',
   status: 'Open',
-  completion: 0,
+  progress: 0,
   estimated_hours: 1.0
 });
 
@@ -351,7 +351,7 @@ const loadActivity = async () => {
         activity_name: activityName,
         project: projectId.value,
         status: 'Open',
-        completion: 0,
+        progress: 0,
         estimated_hours: 1.0
       };
       originalActivity.value = { ...activity.value };
@@ -377,11 +377,10 @@ const saveActivity = async () => {
       estimated_hours: activity.value.estimated_hours,
       start_date: activity.value.start_date,
       end_date: activity.value.end_date,
-      completion: activity.value.completion
+      progress: activity.value.progress
     };
 
-    console.log('Saving activity data:', updateData);
-    await updateActivity(activity.value.name, updateData);
+    const result = await updateActivity(activity.value.name, updateData);
     
     alert(`Activity "${activity.value.activity_name}" has been updated successfully!`);
     

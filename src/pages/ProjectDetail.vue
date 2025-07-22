@@ -601,7 +601,6 @@
             >
               <div class="activity-info" @click="selectActivity(activity)">
                 <div class="activity-name">{{ activity.name }}</div>
-                <div class="activity-id">{{ activity.id }}</div>
               </div>
               <div class="activity-actions">
                 <div class="activity-status">{{ activity.status }}</div>
@@ -625,6 +624,10 @@
                     <span class="activity-stat-value" :class="getMarginColorClass(getActivityMarginPercent(activity))">
                       {{ getActivityMarginPercent(activity) }}%
                     </span>
+                  </div>
+                  <div class="activity-stat-item">
+                    <span class="activity-stat-label">PROGRESS</span>
+                    <span class="activity-stat-value">{{ activity.progress || 0 }}%</span>
                   </div>
                 </div>
                 
@@ -751,7 +754,7 @@ interface Activity {
   status: string;
   start_date?: string;
   end_date?: string;
-  completion?: number;
+  progress?: number;
   estimated_hours?: number;
   actual_hours?: number;
   estimated_revenue?: number;
@@ -818,20 +821,20 @@ const filteredActivities = computed(() => {
   // Apply progress filter
   if (progressFilter.value) {
     filtered = filtered.filter(activity => {
-      const completion = activity.completion || 0;
+      const progress = activity.progress || 0;
       switch (progressFilter.value) {
         case '0':
-          return completion === 0;
+          return progress === 0;
         case '1-25':
-          return completion >= 1 && completion <= 25;
+          return progress >= 1 && progress <= 25;
         case '26-50':
-          return completion >= 26 && completion <= 50;
+          return progress >= 26 && progress <= 50;
         case '51-75':
-          return completion >= 51 && completion <= 75;
+          return progress >= 51 && progress <= 75;
         case '76-99':
-          return completion >= 76 && completion <= 99;
+          return progress >= 76 && progress <= 99;
         case '100':
-          return completion === 100;
+          return progress === 100;
         default:
           return true;
       }
@@ -897,8 +900,6 @@ const loadProjectActivities = async () => {
         }
       }
       
-      console.log('Raw activity data received:', activityData);
-      
       // Map activity data to our interface
       activities.value = activityData.map((activity: any) => ({
         id: activity.name,
@@ -906,11 +907,10 @@ const loadProjectActivities = async () => {
         status: activity.status,
         start_date: activity.start_date,
         end_date: activity.end_date,
-        completion: activity.completion || 0,
+        progress: activity.progress || 0,
         estimated_hours: activity.estimated_hours || 0,
         actual_hours: activity.burnt_hours || 0
       }));
-      console.log('Mapped activities:', activities.value);
     } else {
       console.log('No project name or code available for loading activities');
     }
@@ -1922,11 +1922,6 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 600;
   color: var(--monday-dark);
-}
-
-.activity-id {
-  font-size: 12px;
-  color: var(--monday-medium);
 }
 
 .activity-actions {

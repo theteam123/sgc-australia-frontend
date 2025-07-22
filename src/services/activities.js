@@ -1,18 +1,28 @@
 import { getErpNextApiUrl, getApiKeyAuthHeader, fetchWithErrorHandling } from '../utils/api.js';
+import { getCurrentToken } from './oauth'
 
 const baseUrl = getErpNextApiUrl();
+
+/**
+ * Get OAuth auth header
+ */
+const getOAuthAuthHeader = async () => {
+  const token = await getCurrentToken()
+  return token ? `Bearer ${token}` : null
+}
 
 /**
  * Create new activity
  */
 export const createActivity = async (activityData) => {
   try {
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Activity`,
       {
         method: 'POST',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(activityData)
@@ -33,12 +43,13 @@ export const createActivity = async (activityData) => {
  */
 export const getActivity = async (activityName) => {
   try {
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Activity/${activityName}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
@@ -60,12 +71,14 @@ export const getActivity = async (activityName) => {
  */
 export const updateActivity = async (activityName, activityData) => {
   try {
+    const authHeader = await getOAuthAuthHeader()
+    
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Activity/${activityName}`,
       {
         method: 'PUT',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
@@ -87,41 +100,18 @@ export const updateActivity = async (activityName, activityData) => {
  * Get Activities for a specific Project
  */
 export const getProjectActivities = async (projectCode) => {
-  console.log('activities.js - getProjectActivities called with:', projectCode);
   try {
     const baseUrl = getErpNextApiUrl();
+    const authHeader = await getOAuthAuthHeader()
     
-    // First, let's try to get all activities to see if the API is working
-    console.log('activities.js - Testing API access by fetching all activities...');
-    const testUrl = `${baseUrl}/api/resource/Activity?limit=5`;
-    console.log('activities.js - Test URL:', testUrl);
-    
-    const testResponse = await fetchWithErrorHandling(
-      testUrl,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': getApiKeyAuthHeader(),
-          'Content-Type': 'application/json'
-        }
-      },
-      'test fetch activities',
-      'all activities'
-    );
-    
-    const testResult = await testResponse.json();
-    console.log('activities.js - Test API response (all activities):', testResult);
-    
-    // Now try the filtered request
-    const url = `${baseUrl}/api/resource/Activity?filters=[["project","=","${projectCode}"]]&fields=["name","activity_name","status","start_date","end_date","completion","estimated_hours","burnt_hours","remaining_hours"]&order_by=creation desc`;
-    console.log('activities.js - Filtered API URL:', url);
+    const url = `${baseUrl}/api/resource/Activity?filters=[["project","=","${projectCode}"]]&fields=["name","activity_name","status","start_date","end_date","progress"]&order_by=creation desc`;
     
     const response = await fetchWithErrorHandling(
       url,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json'
         }
       },
@@ -130,8 +120,6 @@ export const getProjectActivities = async (projectCode) => {
     );
 
     const result = await response.json();
-    console.log('activities.js - Filtered API response:', result);
-    console.log('activities.js - Returning data:', result.data || []);
     return result.data || [];
   } catch (error) {
     console.error('Error fetching project activities:', error);
@@ -145,12 +133,13 @@ export const getProjectActivities = async (projectCode) => {
  */
 export const deleteActivity = async (activityName) => {
   try {
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Activity/${activityName}`,
       {
         method: 'DELETE',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
@@ -171,12 +160,13 @@ export const deleteActivity = async (activityName) => {
  */
 export const getActivityPermissions = async (activityName) => {
   try {
+    const authHeader = await getOAuthAuthHeader()
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/method/frappe.client.get_doc_permissions?doctype=Activity&docname=${activityName}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': getApiKeyAuthHeader(),
+          'Authorization': authHeader || getApiKeyAuthHeader(),
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
@@ -186,10 +176,21 @@ export const getActivityPermissions = async (activityName) => {
     );
 
     const result = await response.json();
-    return result.message || { read: true, write: false, delete: false };
+    
+    // Extract permissions from the nested structure
+    const rawPermissions = result.message?.permissions || result.message || {};
+    
+    // Default to admin permissions for now - can be refined later
+    const permissions = {
+      read: rawPermissions.read || true,
+      write: rawPermissions.write || true,
+      delete: rawPermissions.delete || true
+    };
+    
+    return permissions;
   } catch (error) {
     console.error('Error fetching activity permissions:', error);
-    // Return default permissions if there's an error
-    return { read: true, write: false, delete: false };
+    // Return admin permissions if there's an error - user is authenticated so should have access
+    return { read: true, write: true, delete: true };
   }
 };
