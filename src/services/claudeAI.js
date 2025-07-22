@@ -52,6 +52,63 @@ export const generateDocType = async (apiKey, businessRequirements) => {
 };
 
 /**
+ * Parse natural language query using Claude API
+ * @param {string} query - The natural language query
+ * @param {string} apiKey - Claude API key
+ * @param {string} context - Either 'activities' or 'projects' to determine the context
+ * @param {Array} availableItems - Array of available items (activities or projects) for context
+ * @returns {Object} Parsed query result with filters
+ */
+export const parseNaturalLanguageQuery = async (query, apiKey, context = 'activities', availableItems = []) => {
+  if (!apiKey || !query) {
+    throw new Error('API key and query are required');
+  }
+
+  try {
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        apiKey,
+        prompt: buildQueryParsingPrompt(query, context, availableItems)
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // Quietly handle AI service not being available or having issues
+      if (response.status === 404) {
+        throw new Error('AI service not available');
+      }
+      if (response.status >= 500) {
+        throw new Error('AI service temporarily unavailable');
+      }
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.content || !Array.isArray(data.content) || data.content.length === 0) {
+      throw new Error('Invalid response format from Claude API');
+    }
+
+    const responseText = data.content[0].text;
+    return parseQueryResponse(responseText, context);
+
+  } catch (error) {
+    // Only log errors that aren't expected AI service unavailability
+    if (!error.message.includes('AI service not available') && !error.message.includes('AI service temporarily unavailable')) {
+      console.error('Error parsing natural language query:', error);
+    } else {
+      console.warn('AI service unavailable, falling back to pattern matching');
+    }
+    throw new Error(`Failed to parse query: ${error.message}`);
+  }
+};
+
+/**
  * Build Enhanced Prompt with Advanced Engineering
  * @param {string} requirements - Business requirements
  * @returns {string} Comprehensive prompt for Claude AI
@@ -523,6 +580,223 @@ const generateFallbackBusinessLogic = (docType) => {
 - Plan dashboard views for key metrics
 - Set up automated reports
 - Consider data export capabilities`;
+};
+
+/**
+ * Build Query Parsing Prompt for Natural Language Search
+ * @param {string} query - Natural language search query
+ * @param {string} context - Either 'activities' or 'projects' to determine the context
+ * @param {Array} availableItems - Array of available items for context
+ * @returns {string} Comprehensive prompt for query parsing
+ */
+const buildQueryParsingPrompt = (query, context = 'activities', availableItems = []) => {
+  let itemContext = '';
+  let filterTypes = '';
+  let exampleQueries = '';
+  
+  if (context === 'projects') {
+    itemContext = availableItems.length > 0 ? 
+      `\n\nAVAILABLE PROJECTS FOR CONTEXT:\n${availableItems.map(project => 
+        `- "${project.project_name}" (Code: ${project.project_code}, Status: ${project.status}, Division: ${project.division || 'N/A'}, Value: ${project.project_value || 0})`
+      ).join('\n')}` : '';
+      
+    filterTypes = `AVAILABLE FILTER TYPES:
+1. **Status Filters**: Opportunity, Estimate, Project, Archived, Active, Planning, Completed, On Hold
+2. **Division Filters**: PRO, ADM, AUT, ELC, TSD
+3. **Value Filters**: Ranges like 0-50000, 50000-100000, 100000-500000, 500000+
+4. **Margin Filters**: Ranges like negative, 0-10, 10-20, 20+
+5. **Text Filters**: Project name contains, starts with, or exact matches
+6. **Client Filters**: Organisation/client name contains`;
+
+    exampleQueries = `EXAMPLE QUERIES AND EXPECTED RESPONSES:
+"projects worth more than 500k" → {"valueRange": "500000+", "interpretation": "Projects worth more than $500,000"}
+"completed PRO division projects" → {"status": "completed", "division": "PRO", "interpretation": "Completed projects in PRO division"}
+"margin less than 10%" → {"marginRange": "0-10", "interpretation": "Projects with margin less than 10%"}`;
+  } else {
+    itemContext = availableItems.length > 0 ? 
+      `\n\nAVAILABLE ACTIVITIES FOR CONTEXT:\n${availableItems.map(activity => 
+        `- "${activity.name}" (Status: ${activity.status}, Progress: ${activity.progress || 0}%, Estimated Hours: ${activity.estimated_hours || 0})`
+      ).join('\n')}` : '';
+      
+    filterTypes = `AVAILABLE FILTER TYPES:
+1. **Status Filters**: Open, Estimate, Working, Pending Review, Overdue, Template, Completed, Cancelled
+2. **Progress Filters**: Exact percentage (0-100) or ranges (e.g., 1-25, 26-50, etc.)
+3. **Text Filters**: Activity name contains, starts with, or exact matches
+4. **Date Filters**: Start date, end date, date ranges
+5. **Semantic Filters**: Activities that have "commenced" (progress > 0), "in progress" (progress 1-99%), "not started" (progress = 0)
+6. **Estimated Hours Filters**: Greater than, less than, or within ranges`;
+
+    exampleQueries = `EXAMPLE QUERIES AND EXPECTED RESPONSES:
+"open with less than 200 hours" → {"status": "open", "estimatedHours": {"operator": "less", "value": 200}, "interpretation": "Open activities with estimated hours less than 200"}
+"completed estimates" → {"status": "estimate", "progress": 100, "interpretation": "Completed estimate activities"}
+"activities starting this week" → {"startDateRange": {"start": "2024-12-09", "end": "2024-12-15"}, "interpretation": "Activities starting this week"}`;
+  }
+
+  return `You are an intelligent search query parser for a project management system. Your task is to analyze natural language search queries and convert them into structured filters for ${context}.
+
+QUERY TO ANALYZE: "${query}"${itemContext}
+
+${filterTypes}
+
+${exampleQueries}
+6. **Estimated Hours Filters**: Activities with estimated hours greater than, less than, or equal to specific values
+
+INTELLIGENT PARSING RULES:
+- "commenced", "started", "begun" = activities with progress > 0%
+- "in progress", "active", "working" = activities with progress 1-99%
+- "not started", "new", "pending" = activities with progress = 0%
+- "completed", "finished", "done" = activities with progress = 100% OR status = "Completed"
+- "estimates", "quotes" = status = "Estimate"
+- **Hours patterns**: "estimated hours greater than 100", "hours > 50", "more than 200 hours", "large tasks", "small tasks" (< 40 hours)
+- **Large tasks**: "large tasks", "big activities", "major work" = estimated hours > 100
+- **Small tasks**: "small tasks", "quick activities", "minor work" = estimated hours < 40
+- Date references like "this week", "next month", "overdue" should be converted to date ranges
+- Month references: "starting in july", "july activities", "ending in december" = date range for that month
+- Year references: "starting in 2025", "2024 activities" = date range for that year
+- Relative dates: "this month", "next week", "last quarter" = calculate relative to current date (July 2025)
+- Handle typos and variations (e.g., "recrutment" should match "Recruitment")
+- Consider context from available activities to suggest relevant matches
+
+RESPONSE FORMAT (JSON):
+{
+  "interpretation": "Human-readable description of what the search is looking for",
+  "confidence": 0.95,
+  "filters": {
+    "status": "Working" | null,
+    "progressRange": {"min": 1, "max": 100} | null,
+    "progress": 50 | null,
+    "nameContains": "text" | null,
+    "nameStartsWith": "text" | null,
+    "nameExact": "text" | null,
+    "dateRange": {"start": "2025-01-01", "end": "2025-01-31"} | null,
+    "startDateRange": {"start": "2025-07-01", "end": "2025-07-31"} | null,
+    "endDateRange": {"start": "2025-12-01", "end": "2025-12-31"} | null,
+    "isOverdue": true | false | null,
+    "semantic": "commenced" | "in-progress" | "not-started" | "completed" | null,
+    "estimatedHours": {"operator": "greater" | "less" | "equal", "value": 100} | null
+  },
+  "suggestions": ["Alternative search suggestions if applicable"],
+  "matchedActivities": ["List of activity names that might match based on available context"]
+}
+
+EXAMPLES:
+Query: "show me recruitment activities"
+Response: {
+  "interpretation": "Activities containing 'recruitment' in the name",
+  "confidence": 0.9,
+  "filters": {"nameContains": "recruitment"},
+  "suggestions": ["recruitment process", "hiring activities"],
+  "matchedActivities": ["Recruitment Process"]
+}
+
+Query: "activities that have commenced"
+Response: {
+  "interpretation": "Activities that have started (progress greater than 0%)",
+  "confidence": 0.95,
+  "filters": {"semantic": "commenced", "progressRange": {"min": 1, "max": 100}},
+  "suggestions": ["in progress activities", "active work"],
+  "matchedActivities": []
+}
+
+Query: "show estimates"
+Response: {
+  "interpretation": "Activities with Estimate status",
+  "confidence": 0.9,
+  "filters": {"status": "Estimate"},
+  "suggestions": ["estimation activities", "quote activities"],
+  "matchedActivities": []
+}
+
+Query: "starting in july"
+Response: {
+  "interpretation": "Activities that start in July 2025",
+  "confidence": 0.95,
+  "filters": {"startDateRange": {"start": "2025-07-01", "end": "2025-07-31"}},
+  "suggestions": ["july activities", "summer activities", "activities starting this month"],
+  "matchedActivities": []
+}
+
+Query: "ending in december"
+Response: {
+  "interpretation": "Activities that end in December 2025",
+  "confidence": 0.95,
+  "filters": {"endDateRange": {"start": "2025-12-01", "end": "2025-12-31"}},
+  "suggestions": ["december deadlines", "year-end activities"],
+  "matchedActivities": []
+}
+
+Query: "estimated hours greater than 100"
+Response: {
+  "interpretation": "Activities with estimated hours greater than 100",
+  "confidence": 0.95,
+  "filters": {"estimatedHours": {"operator": "greater", "value": 100}},
+  "suggestions": ["large tasks", "major activities", "complex work"],
+  "matchedActivities": []
+}
+
+Query: "large tasks"
+Response: {
+  "interpretation": "Large activities with significant time requirements (estimated hours > 100)",
+  "confidence": 0.85,
+  "filters": {"estimatedHours": {"operator": "greater", "value": 100}},
+  "suggestions": ["major work", "complex activities", "estimated hours > 100"],
+  "matchedActivities": []
+}
+
+Analyze the query and provide a JSON response following this exact format. Be intelligent about understanding user intent and provide helpful suggestions.`;
+};
+
+/**
+ * Parse Claude AI Response for Query Analysis
+ * @param {string} responseText - Raw response from Claude AI
+ * @param {string} context - Context type ('activities' or 'projects')
+ * @returns {Object} Parsed query filters and interpretation
+ */
+const parseQueryResponse = (responseText, context = 'activities') => {
+  try {
+    // Extract JSON from response (it might be wrapped in markdown or other text)
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in response');
+    }
+
+    const parsedResponse = JSON.parse(jsonMatch[0]);
+    
+    // Validate the response structure
+    if (!parsedResponse.interpretation || !parsedResponse.filters) {
+      throw new Error('Invalid response structure');
+    }
+
+    // Use context-appropriate matched items property
+    const matchedItemsKey = context === 'projects' ? 'matchedProjects' : 'matchedActivities';
+    const matchedItems = parsedResponse[matchedItemsKey] || parsedResponse.matchedActivities || [];
+
+    return {
+      isAiParsed: true,
+      interpretation: parsedResponse.interpretation,
+      confidence: parsedResponse.confidence || 0.8,
+      filters: parsedResponse.filters,
+      suggestions: parsedResponse.suggestions || [],
+      matchedActivities: context === 'activities' ? matchedItems : [],
+      matchedProjects: context === 'projects' ? matchedItems : [],
+      isNaturalLanguage: true
+    };
+
+  } catch (error) {
+    console.error('Error parsing Claude response:', error);
+    // Fallback to basic text search
+    return {
+      isAiParsed: false,
+      interpretation: `Text search for "${responseText.slice(0, 50)}..."`,
+      confidence: 0.3,
+      filters: {
+        nameContains: responseText.slice(0, 100) // Use first 100 chars as fallback
+      },
+      suggestions: [],
+      matchedActivities: [],
+      isNaturalLanguage: true
+    };
+  }
 };
 
 /**

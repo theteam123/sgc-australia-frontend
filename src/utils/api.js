@@ -52,13 +52,24 @@ export const getTheTeamAuthHeader = () => {
  * @returns {Promise<Error>} - Promise that rejects with detailed error
  */
 export const handleApiError = async (response, context = "API request", identifier = "") => {
-  // Enhanced error logging with detailed information
-  console.error(`Failed to ${context}:`, {
-    status: response.status,
-    statusText: response.statusText,
-    url: response.url,
-    identifier: identifier
-  });
+  // Only log 404 errors for non-linked document requests to reduce noise
+  const is404LinkedDoc = response.status === 404 && (
+    context === 'fetch linked document' ||
+    response.url.includes('/api/resource/Division/') ||
+    response.url.includes('/api/resource/Project%20Type/') ||
+    response.url.includes('/api/resource/Work%20Type/') ||
+    response.url.includes('/api/resource/Industry%20Sector/')
+  );
+  
+  if (!is404LinkedDoc) {
+    // Enhanced error logging with detailed information
+    console.error(`Failed to ${context}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      identifier: identifier
+    });
+  }
 
   // Try to extract error message from response body
   let errorMessage = `HTTP ${response.status}: ${response.statusText}`;

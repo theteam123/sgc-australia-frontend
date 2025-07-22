@@ -44,6 +44,7 @@ export const createActivity = async (activityData) => {
 export const getActivity = async (activityName) => {
   try {
     const authHeader = await getOAuthAuthHeader()
+    // Fetch all fields for the individual activity
     const response = await fetchWithErrorHandling(
       `${baseUrl}/api/resource/Activity/${activityName}`,
       {
@@ -59,6 +60,8 @@ export const getActivity = async (activityName) => {
     );
 
     const result = await response.json();
+    console.log('📋 Fetched activity with all fields:', result.data);
+    console.log('📋 Available fields:', result.data ? Object.keys(result.data) : 'No data');
     return result.data;
   } catch (error) {
     console.error('Error fetching activity:', error);
@@ -104,7 +107,8 @@ export const getProjectActivities = async (projectCode) => {
     const baseUrl = getErpNextApiUrl();
     const authHeader = await getOAuthAuthHeader()
     
-    const url = `${baseUrl}/api/resource/Activity?filters=[["project","=","${projectCode}"]]&fields=["name","activity_name","status","start_date","end_date","progress"]&order_by=creation desc`;
+    // Fetch ALL fields from the Activity doctype
+    const url = `${baseUrl}/api/resource/Activity?filters=[["project","=","${projectCode}"]]&fields=["*"]&order_by=creation desc`;
     
     const response = await fetchWithErrorHandling(
       url,
@@ -124,6 +128,51 @@ export const getProjectActivities = async (projectCode) => {
   } catch (error) {
     console.error('Error fetching project activities:', error);
     return []; // Return empty array instead of throwing error
+  }
+};
+
+/**
+ * Check if a project has activities with the specified status
+ */
+export const projectHasActivitiesWithStatus = async (projectName, activityStatus) => {
+  try {
+    const activities = await getProjectActivities(projectName);
+    return activities.some(activity => activity.status === activityStatus);
+  } catch (error) {
+    console.error(`Error checking activities for project ${projectName}:`, error);
+    return false;
+  }
+};
+
+/**
+ * Filter projects that have activities with the specified status
+ */
+export const filterProjectsByActivityStatus = async (projects, activityStatus) => {
+  try {
+    console.log(`🔍 Filtering ${projects.length} projects for activities with status: ${activityStatus}`);
+    
+    // Check each project for activities with the specified status
+    const results = await Promise.all(
+      projects.map(async (project) => {
+        try {
+          const hasMatchingActivities = await projectHasActivitiesWithStatus(project.name, activityStatus);
+          console.log(`Project "${project.project_name}" (${project.name}) has activities with status "${activityStatus}": ${hasMatchingActivities}`);
+          return hasMatchingActivities ? project : null;
+        } catch (error) {
+          console.error(`Error checking project ${project.project_name}:`, error);
+          return null;
+        }
+      })
+    );
+    
+    // Filter out null values (projects without matching activities)
+    const filteredProjects = results.filter(project => project !== null);
+    console.log(`✅ Found ${filteredProjects.length} projects with activities having status "${activityStatus}"`);
+    
+    return filteredProjects;
+  } catch (error) {
+    console.error('Error filtering projects by activity status:', error);
+    return projects; // Return original list if filtering fails
   }
 };
 

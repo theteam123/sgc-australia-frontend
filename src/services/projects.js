@@ -55,7 +55,10 @@ const getLinkedDocumentName = async (doctype, id) => {
         return doc.name
     }
   } catch (error) {
-    console.error(`Error fetching ${doctype} ${id}:`, error)
+    // Only log errors that aren't 404s (missing master data is expected)
+    if (!error.message?.includes('404') && !error.message?.includes('not found')) {
+      console.error(`Error fetching ${doctype} ${id}:`, error)
+    }
     return id // Return the ID if we can't fetch the name
   }
 }

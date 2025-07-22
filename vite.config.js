@@ -15,6 +15,11 @@ export default defineConfig({
     },
     port: 3000, // or any port you prefer
     proxy: {
+      '/api/claude': {
+        target: 'http://localhost:3003',
+        changeOrigin: true,
+        secure: false
+      },
       '/api': {
         target: 'https://ops.sgcloud.com.au',
         changeOrigin: true,
